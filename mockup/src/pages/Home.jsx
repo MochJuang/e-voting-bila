@@ -5,9 +5,9 @@ export default function Home() {
   return (
     <Screen width="max-w-lg">
       <div className="text-center mb-8">
-        <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white text-2xl font-bold">B</div>
-        <h1 className="text-2xl font-bold text-slate-900">Pemilihan BILA</h1>
-        <p className="text-slate-500 mt-1">Sistem e-voting dengan verifikasi wajah & liveness</p>
+        <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white text-lg font-bold">TI</div>
+        <h1 className="text-xl font-bold text-slate-900 leading-snug">E-Voting Ketua Himpunan Mahasiswa Teknik Informatika Nusa Putra</h1>
+        <p className="text-slate-500 mt-2">Sistem e-voting dengan verifikasi wajah & liveness</p>
       </div>
 
       <div className="flex flex-col gap-3">

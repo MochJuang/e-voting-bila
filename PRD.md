@@ -1,8 +1,8 @@
-# PRD: Sistem Pemilihan BILA (E-Voting Berbasis Verifikasi Wajah)
+# PRD: E-Voting Ketua Himpunan Mahasiswa Teknik Informatika Nusa Putra
 
 ## 1. Latar Belakang
 
-Pemilihan organisasi kampus (mis. BEM/himpunan) saat ini rawan masalah: satu mahasiswa memilih lebih dari sekali, kandidat/pemilih tidak terverifikasi identitasnya, dan rekapitulasi manual yang lambat serta rawan salah hitung. Sistem Pemilihan BILA adalah aplikasi web e-voting yang menggunakan **NIM + password** sebagai kredensial dasar dan **verifikasi wajah + liveness detection** sebagai lapisan anti-kecurangan, untuk memastikan satu mahasiswa = satu suara, dan yang memilih adalah orang yang bersangkutan (bukan diwakilkan).
+Pemilihan Ketua Himpunan Mahasiswa Teknik Informatika (HMTI) Universitas Nusa Putra saat ini rawan masalah: satu mahasiswa memilih lebih dari sekali, kandidat/pemilih tidak terverifikasi identitasnya, dan rekapitulasi manual yang lambat serta rawan salah hitung. Sistem E-Voting Ketua HMTI Nusa Putra adalah aplikasi web e-voting yang menggunakan **NIM + password** sebagai kredensial dasar dan **verifikasi wajah + liveness detection** sebagai lapisan anti-kecurangan, untuk memastikan satu mahasiswa = satu suara, dan yang memilih adalah orang yang bersangkutan (bukan diwakilkan).
 
 ## 2. Tujuan
 

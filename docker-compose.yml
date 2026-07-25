@@ -1,0 +1,33 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: e_voting_mysql
+    restart: unless-stopped
+    # Login: user root, password KOSONG (sesuai backend/.env)
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: e_voting
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Opsional: UI database di http://localhost:8080 (server: mysql, user: root, password kosong)
+  adminer:
+    image: adminer:4
+    container_name: e_voting_adminer
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+volumes:
+  mysql_data:

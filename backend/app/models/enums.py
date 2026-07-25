@@ -21,6 +21,32 @@ class VerificationResult(str, Enum):
     LOCKED = "locked"
 
 
+class FacePose(str, Enum):
+    """Pose wajah yang di-scan saat enrollment (registrasi)."""
+
+    CENTER = "center"  # tengah
+    UP = "up"  # atas
+    RIGHT = "right"  # kanan
+    DOWN = "down"  # bawah
+    LEFT = "left"  # kiri
+
+
+class LivenessChallenge(str, Enum):
+    """Tantangan liveness acak saat verifikasi realtime."""
+
+    SMILE = "smile"  # tersenyum
+    BLINK = "blink"  # berkedip
+    TURN_LEFT = "turn_left"  # hadap kiri
+    TURN_RIGHT = "turn_right"  # hadap kanan
+
+
+class VerifyStage(str, Enum):
+    """Tahap verifikasi realtime."""
+
+    MATCH = "match"  # streaming pencocokan wajah
+    LIVENESS = "liveness"  # cek liveness setelah wajah cocok
+
+
 class AssistedSessionResult(str, Enum):
     SUCCESS = "success"
     FAILED = "failed"

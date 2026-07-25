@@ -32,13 +32,23 @@ from app.schemas.election import (
     VoteSubmitResponse,
     VotingConfirmationResponse,
 )
-from app.schemas.enums import AccessMode, AssistedSessionResult, SessionStatus, VerificationResult
+from app.schemas.enums import (
+    AccessMode,
+    AssistedSessionResult,
+    FacePose,
+    LivenessChallenge,
+    SessionStatus,
+    VerificationResult,
+    VerifyStage,
+)
 from app.schemas.face import (
+    FaceEnrollFrame,
     FaceEnrollRequest,
     FaceEnrollResponse,
     FaceLogResponse,
     FaceVerifyRequest,
     FaceVerifyResponse,
+    PoseEnrollResultResponse,
 )
 from app.schemas.responses import MessageResponse
 from app.schemas.voters import VoterBase, VoterDetailResponse, VoterImportResponse, VoterStatusResponse

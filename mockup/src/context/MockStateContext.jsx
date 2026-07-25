@@ -191,21 +191,42 @@ export function MockStateProvider({ children }) {
   const confirmPasswordReset = async ({ nim, code, new_password }) =>
     api.auth.confirmReset({ nim, code, new_password })
 
-  const enrollFace = async ({ nim, imageBase64 }) => {
-    const response = await api.face.enroll({ nim, image_base64: imageBase64 }, studentToken)
+  // frames: [{ pose, imageBase64 }]
+  const enrollFace = async ({ nim, frames }) => {
+    const response = await api.face.enroll(
+      { nim, frames: frames.map((f) => ({ pose: f.pose, image_base64: f.imageBase64 })) },
+      studentToken,
+    )
     await refreshStudentSnapshot(studentToken)
     return response
   }
 
-  const verifyFace = async ({ nim, imageBase64, kioskDeviceId = null }) => {
+  const verifyFace = async ({
+    nim,
+    imageBase64,
+    stage = 'match',
+    challenge = null,
+    timedOut = false,
+    kioskDeviceId = null,
+  }) => {
     const response = await api.face.verify(
-      { nim, image_base64: imageBase64, kiosk_device_id: kioskDeviceId },
+      {
+        nim,
+        image_base64: imageBase64,
+        stage,
+        challenge,
+        timed_out: timedOut,
+        kiosk_device_id: kioskDeviceId,
+      },
       studentToken,
     )
     if (response.verification_token) {
       setVerificationToken(response.verification_token)
     }
-    await refreshStudentSnapshot(studentToken)
+    // Hindari refresh snapshot pada tiap frame streaming; cukup saat final.
+    if (response.verified || response.lock_applied) {
+      await refreshStudentSnapshot(studentToken)
+    }
     return response
   }
 
@@ -258,8 +279,9 @@ export function MockStateProvider({ children }) {
     return response
   }
 
-  const markFaceEnrolled = async (nim, fotoWajah) => {
-    const response = await enrollFace({ nim, imageBase64: fotoWajah })
+  // frames: [{ pose, imageBase64 }]
+  const markFaceEnrolled = async (nim, frames) => {
+    const response = await enrollFace({ nim, frames })
     return response
   }
 

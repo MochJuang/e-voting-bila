@@ -174,8 +174,11 @@ class FaceService:
         return round(best, 3)
 
     def _fallback_embedding(self, image_bytes: bytes) -> bytes:
+        # Mean-centered agar dua citra berbeda menghasilkan vektor mendekati ortogonal
+        # (citra sama tetap identik). Membuat pencocokan fallback tetap diskriminatif.
         digest = hashlib.sha256(image_bytes).digest()
-        return np.frombuffer(digest * 8, dtype=np.uint8).astype(np.float32).tobytes()
+        vector = np.frombuffer(digest * 8, dtype=np.uint8).astype(np.float32) - 128.0
+        return vector.tobytes()
 
     # ------------------------------------------------------------------ #
     # Landmark-derived signals (pose, blink, smile)

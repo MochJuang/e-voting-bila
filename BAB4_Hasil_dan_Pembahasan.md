@@ -22,8 +22,8 @@ flowchart LR
     B --> C["API FastAPI"]
     C --> D["MySQL"]
     C --> E["Face Service"]
-    E --> F["InsightFace"]
-    E --> G["OpenCV / MediaPipe"]
+    E --> F["InsightFace (embedding & landmark)"]
+    E --> G["OpenCV (praproses citra)"]
     D --> H["Data Pemilih, Kandidat, Voting, dan Log"]
 ```
 
@@ -38,19 +38,34 @@ Antarmuka pengguna dibangun menggunakan React JS dan Vite agar tampilan responsi
 1. Halaman beranda.
 2. Halaman daftar akun mahasiswa.
 3. Halaman login mahasiswa.
-4. Halaman dashboard mahasiswa.
-5. Halaman registrasi wajah.
-6. Halaman verifikasi wajah dan *liveness*.
-7. Halaman *booth* voting.
-8. Halaman status sudah memilih.
-9. Halaman selesai.
-10. Halaman login panitia.
-11. Halaman dashboard panitia.
-12. Halaman pengelolaan kandidat.
-13. Halaman pengelolaan mahasiswa.
-14. Halaman rekapitulasi hasil.
+4. Halaman reset password mahasiswa.
+5. Halaman dashboard mahasiswa.
+6. Halaman registrasi wajah.
+7. Halaman verifikasi wajah dan *liveness*.
+8. Halaman *booth* voting.
+9. Halaman status sudah memilih.
+10. Halaman selesai.
+11. Halaman login panitia.
+12. Halaman dashboard panitia.
+13. Halaman kiosk mode bantuan panitia (*admin-assisted*).
+14. Halaman pengelolaan kandidat.
+15. Halaman pengelolaan mahasiswa.
+16. Halaman rekapitulasi hasil.
 
 Struktur halaman tersebut memisahkan fungsi mahasiswa dan panitia sehingga alur penggunaan sistem menjadi lebih jelas.
+
+**Tangkapan layar antarmuka yang perlu disisipkan:**
+
+- 📸 **[SS-01]** Halaman beranda (`/`) — *Gambar 4.5 Halaman Beranda*.
+- 📸 **[SS-02]** Halaman login mahasiswa (`/login`) — *Gambar 4.6 Halaman Login Mahasiswa*.
+- 📸 **[SS-03]** Halaman dashboard mahasiswa (`/dashboard`) — *Gambar 4.7 Halaman Dashboard Mahasiswa*.
+- 📸 **[SS-04]** Halaman login panitia (`/admin/login`) — *Gambar 4.8 Halaman Login Panitia*.
+- 📸 **[SS-05]** Halaman dashboard panitia beserta statistik pemilih (`/admin/dashboard`) — *Gambar 4.9 Halaman Dashboard Panitia*.
+- 📸 **[SS-06]** Halaman pengelolaan kandidat (`/admin/kandidat`) — *Gambar 4.10 Halaman Pengelolaan Kandidat*.
+- 📸 **[SS-07]** Halaman pengelolaan mahasiswa — kolom status wajah, status memilih, dan akun terkunci (`/admin/mahasiswa`) — *Gambar 4.11 Halaman Pengelolaan Mahasiswa*.
+- 📸 **[SS-08]** Halaman rekapitulasi hasil (`/admin/rekapitulasi`) — *Gambar 4.12 Halaman Rekapitulasi Hasil*.
+- 📸 **[SS-09]** Halaman kiosk mode admin-assisted saat input NIM (`/admin/kiosk`) — *Gambar 4.13 Halaman Kiosk Mode Admin-Assisted*.
+- 📸 **[SS-10]** Halaman status "sudah memilih" atau halaman selesai — *Gambar 4.14 Halaman Selesai*.
 
 #### 4.2.2 Autentikasi Pengguna
 
@@ -136,17 +151,27 @@ erDiagram
 
 Keterangan Gambar 4.2 Struktur Data Utama Sistem
 
+> 📸 **[SS-11]** Struktur tabel basis data — tangkap daftar tabel pada Adminer (http://localhost:8080) atau MySQL, memperlihatkan tabel `users`, `face_profiles`, `candidates`, `votes`, `voter_statuses`, dan lainnya.
+
+Keterangan Gambar 4.15 Struktur Tabel Basis Data
+
 #### 4.2.4 Registrasi Wajah
 
-Registrasi wajah dilakukan setelah pengguna berhasil membuat akun dan masuk ke dashboard mahasiswa. Kamera perangkat digunakan untuk menangkap citra wajah, kemudian sistem memproses gambar tersebut untuk mendeteksi wajah, mengukur kualitas citra, dan mengekstraksi *face embedding* menggunakan InsightFace.
+Registrasi wajah dilakukan setelah pengguna berhasil membuat akun dan masuk ke dashboard mahasiswa. Berbeda dengan registrasi satu gambar, sistem memindai wajah pengguna dari lima sudut secara terpandu, yaitu menghadap ke tengah (lurus), atas, kanan, bawah, dan kiri. Untuk setiap pose, antarmuka memberikan instruksi arah dan hitung mundur singkat sebelum *frame* diambil, sehingga pengguna dapat memposisikan wajah dengan benar.
 
-Hasil registrasi wajah disimpan ke tabel `face_profiles` dalam bentuk vektor embedding, bukan citra mentah sebagai data utama. Pendekatan ini memudahkan proses pencocokan identitas pada tahap verifikasi dan membuat penyimpanan data biometrik lebih terstruktur.
+Setiap *frame* pose diproses oleh backend untuk mendeteksi wajah, mengukur kualitas citra (pencahayaan dan ketajaman), lalu mengekstraksi *face embedding* menggunakan InsightFace (model ArcFace *buffalo_l*). Sistem memvalidasi bahwa hanya terdapat satu wajah pada setiap *frame*; jika tidak, pose tersebut ditolak dan pengguna diminta mengulang.
+
+Kelima embedding pose disimpan bersama pada tabel `face_profiles` dalam satu kolom biner (format array), bukan citra mentah sebagai data utama. Penyimpanan banyak sudut ini membuat proses verifikasi lebih tahan terhadap variasi posisi kepala dan pencahayaan, karena pencocokan pada tahap verifikasi dapat dibandingkan terhadap sudut yang paling mendekati.
+
+> 📸 **[SS-12]** Halaman registrasi wajah — tangkap proses pemindaian 5 pose (`/registrasi-wajah`), tampak indikator lima pose (tengah, atas, kanan, bawah, kiri) dan panduan arah.
+
+Keterangan Gambar 4.16 Proses Pemindaian Wajah (Registrasi 5 Pose)
 
 #### 4.2.5 Verifikasi Wajah Secara Realtime
 
-Verifikasi wajah dilakukan secara *realtime* dengan mengambil beberapa *frame* kamera secara berurutan. Berbeda dengan pendekatan satu gambar statis, proses ini bertujuan memperoleh sampel wajah yang lebih representatif sehingga pencocokan identitas menjadi lebih stabil.
+Verifikasi wajah dilakukan secara *realtime* dengan mengalirkan (*streaming*) *frame* kamera ke backend secara berkala, bukan melalui satu gambar statis. Pendekatan ini bertujuan memperoleh sampel wajah yang lebih representatif sehingga pencocokan identitas menjadi lebih stabil.
 
-Alur verifikasi dimulai ketika kamera aktif dan sistem mengambil burst *frame* dari webcam. Beberapa *frame* tersebut kemudian dikirim ke backend untuk dianalisis. Backend mengekstraksi embedding dari tiap *frame* dan menghitung kecocokan terhadap data wajah yang tersimpan pada profil pengguna. Jika nilai kemiripan melebihi ambang batas yang ditentukan, maka pengguna dinyatakan cocok dan dapat melanjutkan ke tahap *liveness detection*.
+Alur verifikasi dimulai ketika kamera aktif dan sistem secara berkala menangkap *frame* dari webcam, lalu mengirimkannya ke backend untuk dianalisis. Backend mengekstraksi embedding dari tiap *frame* dan menghitung tingkat kemiripan (*cosine similarity*) terhadap seluruh embedding pose yang tersimpan pada profil pengguna, kemudian mengambil nilai kemiripan tertinggi. Jika nilai tersebut melebihi ambang batas yang ditentukan, maka pengguna dinyatakan cocok dan proses berlanjut secara otomatis ke tahap *liveness detection*. Selama wajah belum cocok, sistem terus memindai tanpa menghitungnya sebagai percobaan gagal, sehingga tidak memicu penguncian akun secara keliru.
 
 ```mermaid
 flowchart TD
@@ -164,11 +189,19 @@ flowchart TD
 
 Keterangan Gambar 4.3 Alur Verifikasi Wajah dan Liveness
 
+> 📸 **[SS-13]** Verifikasi wajah realtime — tangkap layar `/verifikasi-wajah` saat pemindaian berjalan, tampak indikator kecocokan (bar *similarity*) dan status "Memindai & mencocokkan…".
+
+Keterangan Gambar 4.17 Proses Verifikasi Wajah Realtime
+
 #### 4.2.6 Liveness Detection
 
-Setelah wajah berhasil terverifikasi, sistem menampilkan satu tantangan *liveness* acak secara otomatis. Tantangan yang digunakan meliputi kedip mata, senyum, menghadap ke kiri, menghadap ke kanan, atau menghadap lurus ke depan. Tantangan dipilih secara acak agar proses verifikasi tidak mudah diprediksi.
+Setelah wajah berhasil terverifikasi, sistem menampilkan satu tantangan *liveness* acak secara otomatis. Tantangan yang tersedia meliputi empat gerakan, yaitu berkedip, tersenyum, menghadap ke kiri, dan menghadap ke kanan. Tantangan dipilih secara acak oleh sistem agar proses verifikasi tidak mudah diprediksi maupun dipalsukan.
 
-Pada implementasinya, *liveness detection* dijalankan dengan mengambil beberapa *frame* webcam dalam waktu singkat. Sistem kemudian menganalisis perubahan antar *frame* untuk menilai apakah wajah menunjukkan respons alami terhadap tantangan yang diberikan. Dengan pendekatan ini, sistem dapat membedakan wajah asli yang hadir langsung di depan kamera dari media tiruan seperti foto atau video.
+Penilaian *liveness* dilakukan di sisi backend dengan menganalisis sinyal dari hasil deteksi InsightFace pada *frame* yang dialirkan. Gerakan menghadap ke kiri atau kanan dinilai dari sudut kepala (*yaw*) hasil estimasi pose wajah, gerakan berkedip dinilai dari rasio bukaan mata (*eye aspect ratio*) yang mengecil ketika mata terpejam, dan senyum dinilai dari perubahan rasio lebar mulut terhadap jarak antar-mata. Sistem menyatakan *liveness* valid ketika *frame* yang masuk memenuhi kriteria tantangan yang diminta dalam batas waktu tertentu. Dengan mewajibkan gerakan aktif yang dipilih secara acak, sistem dapat membedakan wajah asli yang hadir langsung di depan kamera dari media tiruan seperti foto atau video yang bersifat statis.
+
+> 📸 **[SS-14]** Tantangan liveness — tangkap saat banner tantangan acak muncul (mis. "Silakan TERSENYUM", "Silakan BERKEDIP", atau "Tolehkan kepala ke KIRI/KANAN").
+
+Keterangan Gambar 4.18 Proses Liveness Detection
 
 #### 4.2.7 Proses Voting
 
@@ -188,27 +221,44 @@ flowchart TD
 
 Keterangan Gambar 4.4 Alur Proses Voting
 
+> 📸 **[SS-15]** Halaman booth voting — tangkap daftar kandidat per jabatan beserta tombol pilih (`/booth`).
+
+Keterangan Gambar 4.19 Proses Pemungutan Suara (Voting)
+
 #### 4.2.8 Dashboard Panitia
 
 Dashboard panitia digunakan untuk mengelola data yang terkait dengan pemilihan. Fitur yang tersedia meliputi pengelolaan data mahasiswa, pengelolaan kandidat, pengelolaan sesi pemilihan, pemantauan suara yang masuk, dan rekapitulasi hasil voting.
 
 Pada halaman pengelolaan mahasiswa, panitia dapat melihat daftar pemilih, status registrasi wajah, status memilih, serta kondisi akun yang terkunci. Pada halaman pengelolaan kandidat, panitia dapat menambah, mengubah, dan menghapus data kandidat sesuai jabatan. Sementara itu, pada halaman rekapitulasi, panitia dapat melihat total suara per kandidat dan hasil akhir pemilihan.
 
+> 📸 Tangkapan layar untuk bagian ini memakai SS-05 (dashboard panitia), SS-06 (pengelolaan kandidat), SS-07 (pengelolaan mahasiswa), dan SS-08 (rekapitulasi hasil).
+
 ### 4.3 Hasil Pengujian Sistem
 
 #### 4.3.1 Validasi Implementasi
 
-Sebelum pengujian fungsional dilakukan, implementasi backend dan frontend diverifikasi terlebih dahulu melalui proses kompilasi dan *build*. Hasil verifikasi menunjukkan bahwa:
+Sebelum pengujian fungsional dilakukan, implementasi diverifikasi terlebih dahulu melalui kompilasi kode, *build* frontend, dan validasi langsung terhadap *pipeline* biometrik menggunakan model InsightFace *buffalo_l*. Hasil verifikasi menunjukkan bahwa:
 
 1. Backend berhasil melalui pengecekan sintaks menggunakan `py_compile`.
 2. Frontend berhasil dibangun menggunakan `vite build`.
+3. *Pipeline* biometrik berjalan sesuai rancangan, yaitu wajah berhasil dideteksi, kelima pose registrasi diterima, pencocokan wajah yang sama menghasilkan nilai kemiripan mendekati sempurna, dan tantangan *liveness* menolak wajah netral yang tidak melakukan gerakan.
 
 | No | Pengujian | Hasil |
 |---|---|---|
-| 1 | Kompilasi backend | Berhasil |
-| 2 | *Build* frontend | Berhasil |
+| 1 | Kompilasi backend (`py_compile`) | Berhasil |
+| 2 | *Build* frontend (`vite build`) | Berhasil |
+| 3 | Deteksi wajah & ekstraksi embedding | Berhasil (1 wajah terdeteksi, embedding terbentuk) |
+| 4 | Registrasi lima pose | Berhasil (5 dari 5 pose diterima) |
+| 5 | Pencocokan wajah yang sama | Nilai kemiripan 1,00 (di atas ambang 0,35) |
+| 6 | Tantangan *liveness* pada wajah netral | Sesuai (tidak lolos tanpa gerakan aktif) |
 
 Keterangan Tabel 4.2 Hasil Validasi Implementasi
+
+**Tangkapan layar hasil validasi yang perlu disertakan:**
+
+- 📸 **[SS-16]** Hasil `pytest -v` — seluruh 40 test PASSED (jalankan `pytest -v` pada folder `backend`) — *Gambar 4.20 Hasil Pengujian Otomatis Seluruh Modul*.
+- 📸 **[SS-17]** Hasil `vite build` berhasil (jalankan `npm run build` pada folder `mockup`) — *Gambar 4.21 Hasil Build Frontend*.
+- 📸 **[SS-18]** Hasil validasi model InsightFace — nilai kemiripan 1,00 dan 5 dari 5 pose diterima — *Gambar 4.22 Hasil Validasi Model InsightFace*.
 
 #### 4.3.2 Pengujian Fungsional
 
@@ -230,6 +280,16 @@ Pengujian fungsional dilakukan untuk mengetahui apakah setiap fitur sistem berja
 
 Keterangan Tabel 4.3 Hasil Pengujian Fungsional Sistem
 
+Setiap baris pengujian pada tabel di atas dibuktikan dengan *unit* dan *integration test* otomatis (pytest). Tangkapan layar hasil pengujian per modul yang perlu disertakan (jalankan tiap perintah pada folder `backend`, lalu tangkap keluarannya):
+
+- 📸 **[SS-19]** Modul Autentikasi — `pytest tests/test_modul_autentikasi.py -v` — *Gambar 4.23 Hasil Pengujian Modul Autentikasi*.
+- 📸 **[SS-20]** Modul Registrasi Wajah — `pytest tests/test_modul_registrasi_wajah.py -v` — *Gambar 4.24 Hasil Pengujian Modul Registrasi Wajah*.
+- 📸 **[SS-21]** Modul Verifikasi & Liveness — `pytest tests/test_modul_verifikasi_liveness.py -v` — *Gambar 4.25 Hasil Pengujian Modul Verifikasi & Liveness*.
+- 📸 **[SS-22]** Modul Pemungutan Suara — `pytest tests/test_modul_voting.py -v` — *Gambar 4.26 Hasil Pengujian Modul Pemungutan Suara*.
+- 📸 **[SS-23]** Modul Panitia/Admin — `pytest tests/test_modul_admin.py -v` — *Gambar 4.27 Hasil Pengujian Modul Panitia/Admin*.
+- 📸 **[SS-24]** Modul Keamanan — `pytest tests/test_modul_keamanan.py -v` — *Gambar 4.28 Hasil Pengujian Modul Keamanan*.
+- 📸 **[SS-25]** Modul Face Service (unit algoritma) — `pytest tests/test_face_service.py -v` — *Gambar 4.29 Hasil Pengujian Modul Face Service*.
+
 #### 4.3.3 Pengujian Alur Realtime
 
 Pengujian alur realtime dilakukan untuk memastikan bahwa sistem mampu menjalankan proses identifikasi wajah secara bertahap, yaitu verifikasi wajah terlebih dahulu lalu *liveness detection* satu kali secara otomatis. Hasil pengujian menunjukkan bahwa:
@@ -250,6 +310,10 @@ Pengujian alur realtime dilakukan untuk memastikan bahwa sistem mampu menjalanka
 
 Keterangan Tabel 4.4 Hasil Pengujian Alur Realtime
 
+> 📸 **[SS-26]** Alur realtime di browser — tangkap urutan singkat: pemindaian wajah → wajah cocok → tantangan liveness muncul → akses voting diberikan (dapat berupa 2–3 tangkapan berurutan).
+
+Keterangan Gambar 4.30 Alur Verifikasi Realtime pada Peramban
+
 #### 4.3.4 Pembatasan Satu Pemilih Satu Suara
 
 Pengujian ini dilakukan untuk memastikan bahwa sistem tidak mengizinkan seorang pemilih memberikan suara lebih dari satu kali. Setelah suara berhasil disimpan, status pemilih diperbarui sehingga akses ulang ke halaman voting akan ditolak. Hasil pengujian menunjukkan bahwa mekanisme pembatasan suara bekerja sesuai rancangan.
@@ -258,7 +322,7 @@ Pengujian ini dilakukan untuk memastikan bahwa sistem tidak mengizinkan seorang 
 
 Berdasarkan hasil implementasi dan pengujian, sistem *e-voting* yang dibangun telah memenuhi tujuan penelitian, yaitu menyediakan mekanisme pemilihan yang lebih aman, efisien, dan terstruktur. Integrasi antara pengenalan wajah berbasis InsightFace dan *liveness detection* membantu meningkatkan keamanan autentikasi pemilih karena sistem tidak hanya mengenali identitas, tetapi juga memeriksa keaslian wajah yang digunakan.
 
-Penggunaan verifikasi wajah secara *realtime* memberikan beberapa keuntungan. Pertama, proses verifikasi menjadi lebih natural karena sistem menangkap beberapa *frame* kamera, bukan hanya satu gambar statis. Kedua, pendekatan ini membantu meningkatkan ketepatan pencocokan wajah ketika pencahayaan atau posisi wajah berubah sedikit di antara *frame*. Ketiga, proses ini mendukung pengalaman pengguna yang lebih baik karena verifikasi dilakukan langsung melalui kamera tanpa langkah manual yang berlebihan.
+Penggunaan verifikasi wajah secara *realtime* memberikan beberapa keuntungan. Pertama, proses verifikasi menjadi lebih natural karena sistem menangkap aliran *frame* kamera, bukan hanya satu gambar statis. Kedua, karena data wajah pada tahap registrasi disimpan dari lima sudut (tengah, atas, bawah, kiri, dan kanan) dan pencocokan mengambil kemiripan tertinggi di antara sudut-sudut tersebut, proses menjadi lebih toleran terhadap perubahan pencahayaan maupun posisi kepala di antara *frame*. Ketiga, proses ini mendukung pengalaman pengguna yang lebih baik karena verifikasi dilakukan langsung melalui kamera tanpa langkah manual yang berlebihan.
 
 Selain itu, penerapan tantangan *liveness* acak satu kali membuat sistem lebih tahan terhadap serangan *spoofing*. Tantangan acak seperti kedip, senyum, atau menghadap ke arah tertentu membuat proses pemalsuan menjadi lebih sulit dilakukan. Hal ini relevan dengan tujuan penelitian yang menekankan pentingnya keamanan autentikasi pada sistem pemungutan suara digital.
 
@@ -271,7 +335,8 @@ Walaupun sistem telah berhasil diimplementasikan, terdapat beberapa keterbatasan
 1. Kualitas hasil verifikasi masih bergantung pada kondisi kamera, pencahayaan, dan kestabilan posisi wajah.
 2. Proses *realtime* membutuhkan perangkat kamera yang memadai agar hasil tangkapan *frame* konsisten.
 3. Sistem masih difokuskan pada skala organisasi kampus dan belum dirancang untuk beban pemilih yang sangat besar.
-4. Tantangan *liveness* bersifat *challenge-response* sederhana sehingga masih dapat dikembangkan lagi dengan model anti-spoofing yang lebih canggih.
+4. Tantangan *liveness* bersifat *challenge-response* sederhana sehingga masih dapat dikembangkan lagi dengan model *anti-spoofing* yang lebih canggih.
+5. Penilaian tantangan *liveness* mengandalkan ambang batas pada sudut kepala dan rasio *landmark* wajah, sehingga tantangan berbasis arah kepala cenderung paling andal, sementara deteksi senyum dan kedip masih memerlukan kalibrasi ambang batas sesuai karakteristik kamera yang digunakan.
 
 ### 4.6 Ringkasan Hasil
 

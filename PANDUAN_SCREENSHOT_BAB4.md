@@ -56,8 +56,19 @@ Jalankan pada folder `backend` (aktifkan virtualenv bila perlu: `source .venv/bi
 | SS-25 | Modul Face Service (unit algoritma) | `pytest tests/test_face_service.py -v` |
 | SS-26 | Alur realtime di browser (2–3 tangkapan berurutan) | demo `/verifikasi-wajah` → `/booth` |
 
-### Catatan SS-18 (validasi biometrik)
+### Catatan SS-18 / Gambar 4.22 (validasi model InsightFace)
 
-Untuk membuktikan pipeline berjalan pada model InsightFace asli, jalankan pengujian
-yang dibiarkan memuat model (mengunduh `buffalo_l` pada run pertama, butuh internet),
-lalu tangkap keluarannya yang menampilkan jumlah pose diterima dan nilai kemiripan.
+Jalankan skrip `backend/validate_insightface.py` yang menjalankan pipeline pada
+**model InsightFace asli** (bukan mode fallback test). Run pertama mengunduh
+`buffalo_l` (±280 MB, butuh internet).
+
+```bash
+# di folder backend, dengan venv aktif
+python validate_insightface.py                 # pakai gambar contoh bawaan InsightFace
+python validate_insightface.py wajah.jpg       # ATAU pakai foto wajah sendiri (1 wajah)
+python validate_insightface.py wajah.jpg orang_lain.jpg   # + uji penolakan wajah berbeda
+```
+
+Keluaran yang di-screenshot menampilkan: mode model (InsightFace ASLI), 1 wajah
+terdeteksi, sinyal biometrik (yaw/pitch/ear/smile), **5/5 pose diterima**,
+**similarity 1,000 → COCOK**, dan tantangan liveness menolak wajah statis.

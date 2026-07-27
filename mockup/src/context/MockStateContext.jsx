@@ -300,13 +300,32 @@ export function MockStateProvider({ children }) {
   }
 
   const addVoter = async (voter) => {
-    const response = await api.admin.createVoter(voter, adminToken)
+    const response = await api.admin.createVoter(
+      {
+        nim: voter.nim,
+        nama: voter.nama,
+        kelas: voter.kelas ?? null,
+        mode_akses: voter.modeAkses ?? voter.mode_akses ?? 'mandiri',
+        email: voter.email ?? null,
+      },
+      adminToken,
+    )
     await refreshAdminSnapshot(adminToken)
     return response
   }
 
   const updateVoter = async (nim, patch) => {
-    const response = await api.admin.updateVoter(nim, patch, adminToken)
+    const response = await api.admin.updateVoter(
+      nim,
+      {
+        nim,
+        nama: patch.nama,
+        kelas: patch.kelas ?? null,
+        mode_akses: patch.modeAkses ?? patch.mode_akses ?? 'mandiri',
+        email: patch.email ?? null,
+      },
+      adminToken,
+    )
     await refreshAdminSnapshot(adminToken)
     return response
   }

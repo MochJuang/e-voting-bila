@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from _util import API
+from conftest import register_student
 
 
 @pytest.fixture()
@@ -37,3 +38,22 @@ def test_dashboard_panitia_menampilkan_statistik(client, admin_auth):
 def test_dashboard_tanpa_token_admin_ditolak(client):
     response = client.get(f"{API}/admin/dashboard")
     assert response.status_code == 401
+
+
+def test_edit_kelas_dan_mode_akses_mahasiswa(client, admin_auth):
+    register_student(client, "2141721077")
+    response = client.patch(
+        f"{API}/admin/voters/2141721077",
+        json={
+            "nim": "2141721077",
+            "nama": "Mahasiswa Uji",
+            "kelas": "TI-4C",
+            "mode_akses": "admin_assisted",
+            "email": "2141721077@nusaputra.ac.id",
+        },
+        headers=admin_auth,
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["kelas"] == "TI-4C"
+    assert body["mode_akses"] == "admin_assisted"

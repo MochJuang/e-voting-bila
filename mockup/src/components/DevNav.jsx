@@ -4,10 +4,8 @@ import { Link, useLocation } from 'react-router-dom'
 const LINKS = [
   { group: 'Mahasiswa — Mandiri', items: [
     ['/', 'Home'],
-    ['/daftar', 'A. Daftar'],
     ['/login', 'B. Login'],
     ['/dashboard', 'Dashboard Mahasiswa'],
-    ['/reset-password', 'Reset Password'],
     ['/registrasi-wajah', 'D/C. Registrasi Wajah'],
     ['/verifikasi-wajah', 'F/G. Verifikasi Wajah'],
     ['/booth', 'K/L. Booth Voting'],
@@ -19,6 +17,7 @@ const LINKS = [
     ['/admin/dashboard', 'Admin Dashboard'],
     ['/admin/kandidat', 'Kelola Kandidat'],
     ['/admin/mahasiswa', 'Kelola Mahasiswa'],
+    ['/admin/akun', 'Kelola Akun Admin'],
     ['/admin/kiosk', 'Kiosk Admin-Assisted'],
     ['/admin/rekapitulasi', 'O. Rekapitulasi'],
   ]},

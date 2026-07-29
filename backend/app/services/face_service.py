@@ -381,12 +381,6 @@ class FaceService:
             passed = analysis.smile_ratio >= settings.liveness_smile_threshold
             return passed, analysis, ("Senyum terdeteksi." if passed else "Tersenyumlah lebih lebar.")
 
-        if challenge == LivenessChallenge.BLINK:
-            if analysis.ear is None:
-                return analysis.quality_score >= 60, analysis, "Kedipan tidak dapat diukur, memakai kualitas frame."
-            passed = analysis.ear <= settings.liveness_ear_threshold
-            return passed, analysis, ("Kedipan terdeteksi." if passed else "Kedipkan mata Anda.")
-
         if challenge in (LivenessChallenge.TURN_LEFT, LivenessChallenge.TURN_RIGHT):
             if analysis.yaw is None:
                 return analysis.quality_score >= 60, analysis, "Arah kepala tidak terukur, memakai kualitas frame."

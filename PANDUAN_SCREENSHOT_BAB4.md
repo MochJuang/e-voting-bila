@@ -35,7 +35,7 @@ Akun uji: mahasiswa `2141721001` (password `password`) · panitia `panitia1` (pa
 | SS-11 | Struktur tabel basis data | Adminer http://localhost:8080 (server `mysql`, user `root`, password kosong) |
 | SS-12 | Registrasi wajah — pemindaian 5 pose | `/registrasi-wajah` |
 | SS-13 | Verifikasi wajah realtime (bar similarity) | `/verifikasi-wajah` |
-| SS-14 | Banner tantangan liveness (senyum/kedip/hadap) | `/verifikasi-wajah` (setelah wajah cocok) |
+| SS-14 | Banner tantangan liveness (senyum/hadap kiri/hadap kanan) | `/verifikasi-wajah` (setelah wajah cocok) |
 | SS-15 | Booth voting (daftar kandidat) | `/booth` |
 
 ## B. Pengujian (§4.3)

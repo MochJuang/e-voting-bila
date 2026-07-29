@@ -82,13 +82,13 @@ backend/
 - **Verifikasi (`POST /face/verify`)** bersifat realtime dan bertahap (`stage`):
   - `stage=match`: frontend mengirim frame secara streaming; backend membandingkan embedding.
     Saat cocok, backend mengembalikan `matched=true` + `challenge` acak
-    (`smile` / `blink` / `turn_left` / `turn_right`).
-  - `stage=liveness`: backend memeriksa gerakan sesuai challenge (senyum/kedip/menoleh) dari
+    (`smile` / `turn_left` / `turn_right`).
+  - `stage=liveness`: backend memeriksa gerakan sesuai challenge (senyum/menoleh) dari
     pose & landmark InsightFace; jika lolos → `verification_token` diterbitkan.
   - `timed_out=true`: dicatat sebagai percobaan gagal (untuk penguncian anti-abuse).
 - Jika model InsightFace tidak tersedia di runtime, service otomatis memakai **mode fallback**
   (embedding berbasis hash + liveness disimulasikan) sehingga alur tetap dapat didemokan.
 - Ambang batas dapat dikonfigurasi di `.env` / `config.py`:
-  `FACE_MATCH_THRESHOLD`, `LIVENESS_YAW_THRESHOLD`, `LIVENESS_EAR_THRESHOLD`,
+  `FACE_MATCH_THRESHOLD`, `LIVENESS_YAW_THRESHOLD`,
   `LIVENESS_SMILE_THRESHOLD`, `ENROLL_ENFORCE_POSE_DIRECTION`.
 

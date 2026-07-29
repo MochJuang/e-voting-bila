@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import Screen from '../components/Screen'
 import { useMockState } from '../context/MockStateContext'
 
@@ -62,11 +62,8 @@ export default function Login() {
         <b>2141720003</b> (admin-assisted)
       </div>
 
-      <p className="text-center text-sm text-slate-500 mt-3">
-        <Link to="/reset-password" className="text-blue-600 font-medium">Lupa password?</Link>
-      </p>
-      <p className="text-center text-sm text-slate-500 mt-1">
-        Belum punya akun? <Link to="/daftar" className="text-blue-600 font-medium">Daftar</Link>
+      <p className="text-center text-xs text-slate-400 mt-3">
+        Lupa password atau belum punya akun? Hubungi panitia pemilihan.
       </p>
     </Screen>
   )

@@ -3,16 +3,21 @@ import { Link } from 'react-router-dom'
 import { useMockState } from '../context/MockStateContext'
 import Modal from '../components/Modal'
 
-const emptyForm = { nim: '', nama: '', kelas: '', modeAkses: 'mandiri' }
+const emptyForm = { nim: '', nama: '', kelas: '', modeAkses: 'mandiri', password: '' }
 
 export default function AdminMahasiswa() {
-  const { dpt, addVoter, updateVoter, deleteVoter } = useMockState()
+  const { dpt, addVoter, bulkAddVoters, updateVoter, deleteVoter } = useMockState()
 
-  const [formModal, setFormModal] = useState(null) // { isNew, nim, nama, kelas, modeAkses }
+  const [formModal, setFormModal] = useState(null) // { isNew, nim, nama, kelas, modeAkses, password }
   const [detailModal, setDetailModal] = useState(null) // voter object
   const [confirmDelete, setConfirmDelete] = useState(null) // { nim, nama }
   const [query, setQuery] = useState('')
   const [error, setError] = useState('')
+
+  const [bulkOpen, setBulkOpen] = useState(false)
+  const [bulkText, setBulkText] = useState('')
+  const [bulkResult, setBulkResult] = useState(null)
+  const [bulkLoading, setBulkLoading] = useState(false)
 
   const filtered = dpt.filter(
     (v) => v.nim.includes(query) || v.nama.toLowerCase().includes(query.toLowerCase()) || (v.kelas ?? '').toLowerCase().includes(query.toLowerCase()),
@@ -25,7 +30,7 @@ export default function AdminMahasiswa() {
 
   const openEdit = (v) => {
     setError('')
-    setFormModal({ isNew: false, nim: v.nim, nama: v.nama, kelas: v.kelas ?? '', modeAkses: v.modeAkses })
+    setFormModal({ isNew: false, nim: v.nim, nama: v.nama, kelas: v.kelas ?? '', modeAkses: v.modeAkses, password: '' })
   }
 
   const saveForm = async (e) => {
@@ -42,6 +47,7 @@ export default function AdminMahasiswa() {
           kelas: formModal.kelas,
           modeAkses: formModal.modeAkses,
           email: `${formModal.nim}@kampus.ac.id`,
+          password: formModal.password,
         })
       } else {
         await updateVoter(formModal.nim, {
@@ -49,6 +55,7 @@ export default function AdminMahasiswa() {
           kelas: formModal.kelas,
           modeAkses: formModal.modeAkses,
           email: `${formModal.nim}@kampus.ac.id`,
+          password: formModal.password,
         })
       }
       setFormModal(null)
@@ -57,9 +64,39 @@ export default function AdminMahasiswa() {
     }
   }
 
-  const mockImport = async () => {
-    const n = Math.floor(Math.random() * 900 + 100)
-    await addVoter({ nim: `21417200${n}`, nama: `Mahasiswa Impor ${n}`, kelas: '-', modeAkses: 'mandiri', email: `21417200${n}@kampus.ac.id` })
+  const parseBulk = (text) =>
+    text
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const [nim, nama, kelas, mode] = line.split(',').map((s) => (s ?? '').trim())
+        return {
+          nim,
+          nama: nama || nim,
+          kelas: kelas || '',
+          modeAkses: (mode || '').toLowerCase().includes('assist') ? 'admin_assisted' : 'mandiri',
+        }
+      })
+      .filter((v) => v.nim)
+
+  const submitBulk = async () => {
+    setBulkResult(null)
+    const items = parseBulk(bulkText)
+    if (items.length === 0) {
+      setBulkResult({ error: 'Tidak ada baris valid. Format tiap baris: NIM,Nama,Kelas,Mode' })
+      return
+    }
+    setBulkLoading(true)
+    try {
+      const res = await bulkAddVoters(items)
+      setBulkResult(res)
+      setBulkText('')
+    } catch (err) {
+      setBulkResult({ error: err.message || 'Gagal impor massal.' })
+    } finally {
+      setBulkLoading(false)
+    }
   }
 
   return (
@@ -73,8 +110,8 @@ export default function AdminMahasiswa() {
           <Link to="/admin/dashboard" className="rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold px-4 py-2">
             Kembali
           </Link>
-          <button onClick={mockImport} className="rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold px-4 py-2">
-            Impor CSV (demo)
+          <button onClick={() => { setBulkOpen(true); setBulkResult(null); setBulkText('') }} className="rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold px-4 py-2">
+            Impor / Bulk
           </button>
           <button onClick={openAdd} className="rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold px-4 py-2">
             + Tambah Mahasiswa
@@ -234,6 +271,23 @@ export default function AdminMahasiswa() {
                 <option value="admin_assisted">Admin-Assisted (wajib lewat kiosk panitia)</option>
               </select>
             </label>
+            <label className="block text-left">
+              <span className="text-xs font-medium text-slate-600">
+                {formModal.isNew ? 'Password Awal' : 'Reset Password'}
+              </span>
+              <input
+                type="text"
+                value={formModal.password}
+                onChange={(e) => setFormModal({ ...formModal, password: e.target.value })}
+                placeholder={formModal.isNew ? 'Kosongkan untuk default: password' : 'Kosongkan jika tidak direset (min. 6 karakter)'}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+              />
+              <span className="mt-1 block text-[11px] text-slate-400">
+                {formModal.isNew
+                  ? 'Password ini diberikan ke mahasiswa untuk login pertama.'
+                  : 'Isi untuk mengganti password mahasiswa (sekaligus membuka akun jika terkunci).'}
+              </span>
+            </label>
             {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">{error}</p>}
             <button type="submit" className="mt-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 text-sm">
               Simpan
@@ -260,6 +314,60 @@ export default function AdminMahasiswa() {
               >
                 Hapus
               </button>
+          </div>
+        </Modal>
+      )}
+
+      {bulkOpen && (
+        <Modal title="Impor Mahasiswa Massal" onClose={() => setBulkOpen(false)}>
+          <p className="text-sm text-slate-500 mb-2">
+            Tempel data mahasiswa, <b>satu per baris</b> dengan format:
+          </p>
+          <p className="text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg p-2 mb-3">NIM,Nama,Kelas,Mode</p>
+          <textarea
+            value={bulkText}
+            onChange={(e) => setBulkText(e.target.value)}
+            rows={7}
+            placeholder={'2141721010,Andi Saputra,TI-3A,mandiri\n2141721011,Bunga Lestari,SI-2B,admin_assisted'}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-slate-400"
+          />
+          <p className="text-[11px] text-slate-400 mt-1 mb-3">
+            Kelas &amp; Mode opsional. Mode default &quot;mandiri&quot;; tulis &quot;admin_assisted&quot; bila perlu. Password awal default: <b>password</b>.
+          </p>
+
+          {bulkResult?.error && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-2 mb-3">{bulkResult.error}</p>
+          )}
+          {bulkResult && !bulkResult.error && (
+            <div className="text-sm bg-green-50 border border-green-200 rounded-lg p-2 mb-3">
+              <p className="text-green-700 font-medium">
+                ✓ {bulkResult.created} dibuat, {bulkResult.skipped} dilewati.
+              </p>
+              {bulkResult.items?.some((i) => i.status === 'skipped') && (
+                <ul className="mt-1 text-xs text-slate-500 list-disc list-inside">
+                  {bulkResult.items
+                    .filter((i) => i.status === 'skipped')
+                    .map((i) => (
+                      <li key={i.nim}>
+                        {i.nim} — {i.reason}
+                      </li>
+                    ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <button onClick={() => setBulkOpen(false)} className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium">
+              Tutup
+            </button>
+            <button
+              onClick={submitBulk}
+              disabled={bulkLoading}
+              className="flex-1 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white py-2 text-sm font-semibold"
+            >
+              {bulkLoading ? 'Mengimpor…' : 'Impor'}
+            </button>
           </div>
         </Modal>
       )}

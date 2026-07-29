@@ -18,9 +18,14 @@ from app.core.security import create_access_token, hash_password, verify_passwor
 from app.models import AdminAccount, Candidate, ElectionSession, KioskDevice, Position, User, Vote, VoterStatus
 from app.models.enums import AccessMode
 from app.schemas import (
+    AdminAccountCreate,
+    AdminAccountUpdate,
     AdminDashboardResponse,
     AdminLoginRequest,
     AdminUserResponse,
+    BulkVoterRequest,
+    BulkVoterResponse,
+    BulkVoterResultItem,
     CandidateForm,
     KioskDeviceForm,
     MessageResponse,
@@ -182,7 +187,7 @@ def create_voter(payload: VoterForm, db: DbSession, admin: AdminAccount = Depend
         nim=payload.nim,
         nama=payload.nama,
         kelas=payload.kelas,
-        password_hash=hash_password("password"),
+        password_hash=hash_password(payload.password or "password"),
         email=payload.email,
         is_dpt_member=True,
         face_enrolled=False,
@@ -195,6 +200,38 @@ def create_voter(payload: VoterForm, db: DbSession, admin: AdminAccount = Depend
     return _voter_to_response(voter)
 
 
+@router.post("/voters/bulk", response_model=BulkVoterResponse)
+def bulk_create_voters(payload: BulkVoterRequest, db: DbSession, admin: AdminAccount = Depends(get_current_admin)):
+    """Buat banyak mahasiswa sekaligus. NIM yang sudah ada dilewati (skipped)."""
+    existing = {nim for (nim,) in db.query(User.nim).all()}
+    items: list[BulkVoterResultItem] = []
+    created = 0
+    seen: set[str] = set()
+
+    for form in payload.voters:
+        if form.nim in existing or form.nim in seen:
+            items.append(BulkVoterResultItem(nim=form.nim, status="skipped", reason="NIM sudah terdaftar"))
+            continue
+        voter = User(
+            nim=form.nim,
+            nama=form.nama,
+            kelas=form.kelas,
+            password_hash=hash_password(form.password or "password"),
+            email=form.email,
+            is_dpt_member=True,
+            face_enrolled=False,
+            has_voted=False,
+        )
+        voter.mode_akses = form.mode_akses
+        db.add(voter)
+        seen.add(form.nim)
+        created += 1
+        items.append(BulkVoterResultItem(nim=form.nim, status="created"))
+
+    db.commit()
+    return BulkVoterResponse(created=created, skipped=len(items) - created, items=items)
+
+
 @router.patch("/voters/{nim}", response_model=VoterDetailResponse)
 def update_voter(nim: str, payload: VoterForm, db: DbSession, admin: AdminAccount = Depends(get_current_admin)):
     voter = db.query(User).filter(User.nim == nim).first()
@@ -204,6 +241,10 @@ def update_voter(nim: str, payload: VoterForm, db: DbSession, admin: AdminAccoun
     voter.kelas = payload.kelas
     voter.email = payload.email
     voter.mode_akses = payload.mode_akses
+    # Reset password bila diisi.
+    if payload.password:
+        voter.password_hash = hash_password(payload.password)
+        voter.is_locked = False
     db.commit()
     db.refresh(voter)
     return _voter_to_response(voter)
@@ -217,6 +258,66 @@ def delete_voter(nim: str, db: DbSession, admin: AdminAccount = Depends(get_curr
     db.delete(voter)
     db.commit()
     return MessageResponse(message="Mahasiswa berhasil dihapus.")
+
+
+# --------------------------------------------------------------------------- #
+# Manajemen akun admin/panitia (edit data login + reset password)
+# --------------------------------------------------------------------------- #
+def _admin_to_response(account: AdminAccount) -> AdminUserResponse:
+    return AdminUserResponse(id=account.id, username=account.username, role=account.role)
+
+
+@router.get("/accounts", response_model=list[AdminUserResponse])
+def list_admin_accounts(db: DbSession, admin: AdminAccount = Depends(get_current_admin)):
+    ensure_default_admins(db)
+    return [_admin_to_response(a) for a in db.query(AdminAccount).order_by(AdminAccount.id).all()]
+
+
+@router.post("/accounts", response_model=AdminUserResponse)
+def create_admin_account(payload: AdminAccountCreate, db: DbSession, admin: AdminAccount = Depends(get_current_admin)):
+    if db.query(AdminAccount).filter(AdminAccount.username == payload.username).first():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username sudah digunakan")
+    account = AdminAccount(
+        username=payload.username,
+        password_hash=hash_password(payload.password),
+        role=payload.role or "admin",
+    )
+    db.add(account)
+    db.commit()
+    db.refresh(account)
+    return _admin_to_response(account)
+
+
+@router.patch("/accounts/{account_id}", response_model=AdminUserResponse)
+def update_admin_account(
+    account_id: int, payload: AdminAccountUpdate, db: DbSession, admin: AdminAccount = Depends(get_current_admin)
+):
+    account = db.query(AdminAccount).filter(AdminAccount.id == account_id).first()
+    if not account:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Akun admin tidak ditemukan")
+    if payload.username and payload.username != account.username:
+        if db.query(AdminAccount).filter(AdminAccount.username == payload.username).first():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username sudah digunakan")
+        account.username = payload.username
+    if payload.role:
+        account.role = payload.role
+    if payload.password:
+        account.password_hash = hash_password(payload.password)
+    db.commit()
+    db.refresh(account)
+    return _admin_to_response(account)
+
+
+@router.delete("/accounts/{account_id}", response_model=MessageResponse)
+def delete_admin_account(account_id: int, db: DbSession, admin: AdminAccount = Depends(get_current_admin)):
+    account = db.query(AdminAccount).filter(AdminAccount.id == account_id).first()
+    if not account:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Akun admin tidak ditemukan")
+    if db.query(AdminAccount).count() <= 1:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Minimal harus ada satu akun admin")
+    db.delete(account)
+    db.commit()
+    return MessageResponse(message="Akun admin berhasil dihapus.")
 
 
 @router.get("/positions", response_model=list[PositionResponse])

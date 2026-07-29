@@ -8,7 +8,6 @@ const LIVENESS_TIMEOUT_MS = 20000
 
 const CHALLENGE_META = {
   smile: { label: 'Tersenyum', icon: '😊', instruksi: 'Silakan TERSENYUM lebar' },
-  blink: { label: 'Berkedip', icon: '😉', instruksi: 'Silakan BERKEDIP' },
   turn_left: { label: 'Hadap Kiri', icon: '⬅️', instruksi: 'Tolehkan kepala ke KIRI' },
   turn_right: { label: 'Hadap Kanan', icon: '➡️', instruksi: 'Tolehkan kepala ke KANAN' },
 }

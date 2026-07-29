@@ -307,6 +307,26 @@ export function MockStateProvider({ children }) {
         kelas: voter.kelas ?? null,
         mode_akses: voter.modeAkses ?? voter.mode_akses ?? 'mandiri',
         email: voter.email ?? null,
+        password: voter.password || null,
+      },
+      adminToken,
+    )
+    await refreshAdminSnapshot(adminToken)
+    return response
+  }
+
+  // items: [{ nim, nama, kelas?, modeAkses?, email?, password? }]
+  const bulkAddVoters = async (items) => {
+    const response = await api.admin.bulkCreateVoters(
+      {
+        voters: items.map((v) => ({
+          nim: v.nim,
+          nama: v.nama,
+          kelas: v.kelas ?? null,
+          mode_akses: v.modeAkses ?? v.mode_akses ?? 'mandiri',
+          email: v.email ?? null,
+          password: v.password || null,
+        })),
       },
       adminToken,
     )
@@ -323,12 +343,18 @@ export function MockStateProvider({ children }) {
         kelas: patch.kelas ?? null,
         mode_akses: patch.modeAkses ?? patch.mode_akses ?? 'mandiri',
         email: patch.email ?? null,
+        password: patch.password || null,
       },
       adminToken,
     )
     await refreshAdminSnapshot(adminToken)
     return response
   }
+
+  const listAdminAccounts = async () => api.admin.accounts(adminToken)
+  const addAdminAccount = async (account) => api.admin.createAccount(account, adminToken)
+  const updateAdminAccount = async (id, patch) => api.admin.updateAccount(id, patch, adminToken)
+  const deleteAdminAccount = async (id) => api.admin.deleteAccount(id, adminToken)
 
   const deleteVoter = async (nim) => {
     const response = await api.admin.deleteVoter(nim, adminToken)
@@ -432,8 +458,13 @@ export function MockStateProvider({ children }) {
     markFaceEnrolled,
     markVoted,
     addVoter,
+    bulkAddVoters,
     updateVoter,
     deleteVoter,
+    listAdminAccounts,
+    addAdminAccount,
+    updateAdminAccount,
+    deleteAdminAccount,
     addJabatan,
     updateJabatan,
     deleteJabatan,

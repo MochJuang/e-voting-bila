@@ -50,6 +50,36 @@ class VoterForm(BaseModel):
     kelas: str | None = None
     mode_akses: AccessMode = AccessMode.MANDIRI
     email: str | None = None
+    # Opsional: set/reset password. Kosong = biarkan (default "password" saat create).
+    password: str | None = Field(default=None, min_length=6, max_length=128)
+
+
+class BulkVoterRequest(BaseModel):
+    voters: list[VoterForm] = Field(min_length=1)
+
+
+class BulkVoterResultItem(BaseModel):
+    nim: str
+    status: str  # created | skipped
+    reason: str | None = None
+
+
+class BulkVoterResponse(BaseModel):
+    created: int
+    skipped: int
+    items: list[BulkVoterResultItem]
+
+
+class AdminAccountCreate(BaseModel):
+    username: str = Field(min_length=3, max_length=80)
+    password: str = Field(min_length=6, max_length=128)
+    role: str = Field(default="admin", max_length=50)
+
+
+class AdminAccountUpdate(BaseModel):
+    username: str | None = Field(default=None, min_length=3, max_length=80)
+    password: str | None = Field(default=None, min_length=6, max_length=128)
+    role: str | None = Field(default=None, max_length=50)
 
 
 class KioskDeviceForm(BaseModel):

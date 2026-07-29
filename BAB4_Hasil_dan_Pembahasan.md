@@ -89,64 +89,110 @@ Basis data dirancang menggunakan tabel-tabel utama yang merepresentasikan entita
 | 8 | `face_verification_logs` | Menyimpan log hasil verifikasi wajah dan *liveness*. |
 | 9 | `kiosk_devices` | Menyimpan data perangkat kiosk untuk mode bantuan panitia. |
 | 10 | `assisted_sessions` | Menyimpan riwayat sesi bantuan panitia. |
+| 11 | `admin_accounts` | Menyimpan data akun panitia/admin beserta peran (role). |
+| 12 | `audit_logs` | Menyimpan catatan audit aksi yang dilakukan pada sistem. |
 
 Keterangan Tabel 4.1 Implementasi Tabel Basis Data
 
 ```mermaid
 erDiagram
     USERS {
-        int id
-        string nim
+        int id PK
+        string nim UK
         string nama
         string email
         string password_hash
-        string mode_akses
+        enum mode_akses
         boolean face_enrolled
         boolean has_voted
         boolean is_locked
     }
-    FACE_PROFILES {
-        int id
-        int user_id
-        binary embedding
-        string embedding_version
-        string image_path
-        int quality_score
+    ADMIN_ACCOUNTS {
+        int id PK
+        string username UK
+        string password_hash
+        string role
+    }
+    KIOSK_DEVICES {
+        int id PK
+        string name
+        string device_id UK
+        boolean is_active
     }
     ELECTION_SESSIONS {
-        int id
+        int id PK
         string name
-        string status
+        enum status
         datetime voting_open_at
         datetime voting_close_at
     }
     POSITIONS {
-        int id
-        int session_id
+        int id PK
+        int session_id FK
         string name
         boolean is_required
     }
     CANDIDATES {
-        int id
-        int position_id
+        int id PK
+        int position_id FK
         string name
         int number
         string vision
     }
     VOTES {
-        int id
-        int session_id
-        int position_id
-        int candidate_id
-        string vote_token
+        int id PK
+        int session_id FK
+        int position_id FK
+        int candidate_id FK
+        string vote_token UK
+    }
+    VOTER_STATUSES {
+        int id PK
+        int user_id FK
+        int session_id FK
+        boolean has_voted
+    }
+    FACE_PROFILES {
+        int id PK
+        int user_id FK
+        blob embedding
+        string embedding_version
+        int quality_score
+    }
+    FACE_VERIFICATION_LOGS {
+        int id PK
+        int user_id FK
+        enum result
+        float similarity_score
+        float liveness_score
+    }
+    ASSISTED_SESSIONS {
+        int id PK
+        int admin_id FK
+        int kiosk_device_id FK
+        int user_id FK
+        enum result
+    }
+    AUDIT_LOGS {
+        int id PK
+        string actor_type
+        string action
+        int admin_id FK
     }
 
     USERS ||--o| FACE_PROFILES : memiliki
+    USERS ||--o{ FACE_VERIFICATION_LOGS : mencatat
+    USERS ||--o{ VOTER_STATUSES : memiliki
+    USERS ||--o{ ASSISTED_SESSIONS : dibantu
     ELECTION_SESSIONS ||--o{ POSITIONS : memiliki
     POSITIONS ||--o{ CANDIDATES : memiliki
     ELECTION_SESSIONS ||--o{ VOTES : mencatat
     POSITIONS ||--o{ VOTES : mencatat
     CANDIDATES ||--o{ VOTES : dipilih
+    ELECTION_SESSIONS ||--o{ VOTER_STATUSES : mencatat
+    ADMIN_ACCOUNTS ||--o{ ASSISTED_SESSIONS : menjalankan
+    KIOSK_DEVICES ||--o{ ASSISTED_SESSIONS : digunakan
+    ADMIN_ACCOUNTS ||--o{ AUDIT_LOGS : melakukan
 ```
 
 Keterangan Gambar 4.2 Struktur Data Utama Sistem
@@ -154,6 +200,176 @@ Keterangan Gambar 4.2 Struktur Data Utama Sistem
 > 📸 **[SS-11]** Struktur tabel basis data — tangkap daftar tabel pada Adminer (http://localhost:8080) atau MySQL, memperlihatkan tabel `users`, `face_profiles`, `candidates`, `votes`, `voter_statuses`, dan lainnya.
 
 Keterangan Gambar 4.15 Struktur Tabel Basis Data
+
+**Kamus Data**
+
+Kamus data berikut menjelaskan struktur setiap tabel pada basis data sistem, meliputi nama field, tipe/lebar data, kunci (*key*), dan keterangan.
+
+Tabel `users`
+
+| No | Nama Field | Tipe/Lebar | Key | Keterangan |
+|---|---|---|---|---|
+| 1 | id | Integer | Primary Key | ID pengguna |
+| 2 | nim | Varchar(20) | Unique | NIM mahasiswa |
+| 3 | nama | Varchar(150) | | Nama lengkap mahasiswa |
+| 4 | email | Varchar(150) | Unique | Email kampus |
+| 5 | password_hash | Varchar(255) | | Hash password |
+| 6 | kelas | Varchar(50) | | Kelas mahasiswa |
+| 7 | mode_akses | Enum(mandiri, admin_assisted) | | Mode akses pemilih |
+| 8 | face_enrolled | Boolean | | Status registrasi wajah |
+| 9 | has_voted | Boolean | | Status sudah memilih |
+| 10 | is_locked | Boolean | | Status akun terkunci |
+| 11 | is_dpt_member | Boolean | | Status anggota DPT |
+| 12 | face_note | Text | | Catatan verifikasi wajah |
+| 13 | created_at | DateTime | | Waktu data dibuat |
+| 14 | updated_at | DateTime | | Waktu data diperbarui |
+
+Tabel `admin_accounts`
+
+| No | Nama Field | Tipe/Lebar | Key | Keterangan |
+|---|---|---|---|---|
+| 1 | id | Integer | Primary Key | ID admin |
+| 2 | username | Varchar(80) | Unique | Username panitia |
+| 3 | password_hash | Varchar(255) | | Hash password |
+| 4 | role | Varchar(50) | | Peran akun |
+| 5 | created_at | DateTime | | Waktu data dibuat |
+| 6 | updated_at | DateTime | | Waktu data diperbarui |
+
+Tabel `kiosk_devices`
+
+| No | Nama Field | Tipe/Lebar | Key | Keterangan |
+|---|---|---|---|---|
+| 1 | id | Integer | Primary Key | ID perangkat kiosk |
+| 2 | name | Varchar(150) | | Nama perangkat |
+| 3 | device_id | Varchar(100) | Unique | Identitas perangkat |
+| 4 | ip_address | Varchar(45) | | Alamat IP perangkat |
+| 5 | is_active | Boolean | | Status aktif |
+| 6 | location | Varchar(150) | | Lokasi perangkat |
+| 7 | created_at | DateTime | | Waktu data dibuat |
+| 8 | updated_at | DateTime | | Waktu data diperbarui |
+
+Tabel `election_sessions`
+
+| No | Nama Field | Tipe/Lebar | Key | Keterangan |
+|---|---|---|---|---|
+| 1 | id | Integer | Primary Key | ID sesi pemilihan |
+| 2 | name | Varchar(150) | | Nama sesi pemilihan |
+| 3 | status | Enum(draft, registration_open, voting_open, closed) | | Status sesi |
+| 4 | registration_open_at | DateTime | | Waktu buka pendaftaran |
+| 5 | registration_close_at | DateTime | | Waktu tutup pendaftaran |
+| 6 | voting_open_at | DateTime | | Waktu buka pemungutan suara |
+| 7 | voting_close_at | DateTime | | Waktu tutup pemungutan suara |
+| 8 | description | Text | | Deskripsi sesi |
+| 9 | created_at | DateTime | | Waktu data dibuat |
+| 10 | updated_at | DateTime | | Waktu data diperbarui |
+
+Tabel `positions`
+
+| No | Nama Field | Tipe/Lebar | Key | Keterangan |
+|---|---|---|---|---|
+| 1 | id | Integer | Primary Key | ID jabatan |
+| 2 | session_id | Integer | Foreign Key | Relasi ke sesi pemilihan |
+| 3 | name | Varchar(150) | | Nama jabatan |
+| 4 | is_required | Boolean | | Wajib diisi atau tidak |
+| 5 | created_at | DateTime | | Waktu data dibuat |
+| 6 | updated_at | DateTime | | Waktu data diperbarui |
+
+Tabel `candidates`
+
+| No | Nama Field | Tipe/Lebar | Key | Keterangan |
+|---|---|---|---|---|
+| 1 | id | Integer | Primary Key | ID kandidat |
+| 2 | position_id | Integer | Foreign Key | Relasi ke jabatan |
+| 3 | name | Varchar(150) | | Nama kandidat |
+| 4 | number | Integer | | Nomor urut kandidat |
+| 5 | vision | Text | | Visi/misi kandidat |
+| 6 | photo_path | Varchar(255) | | Path foto kandidat |
+| 7 | color | Varchar(20) | | Warna identitas kandidat |
+| 8 | created_at | DateTime | | Waktu data dibuat |
+| 9 | updated_at | DateTime | | Waktu data diperbarui |
+
+Tabel `votes`
+
+| No | Nama Field | Tipe/Lebar | Key | Keterangan |
+|---|---|---|---|---|
+| 1 | id | Integer | Primary Key | ID suara |
+| 2 | session_id | Integer | Foreign Key | Relasi ke sesi pemilihan |
+| 3 | position_id | Integer | Foreign Key | Relasi ke jabatan |
+| 4 | candidate_id | Integer | Foreign Key | Relasi ke kandidat |
+| 5 | vote_token | Varchar(64) | Unique | Token suara anonim |
+| 6 | created_at | DateTime | | Waktu data dibuat |
+| 7 | updated_at | DateTime | | Waktu data diperbarui |
+
+Tabel `voter_statuses`
+
+| No | Nama Field | Tipe/Lebar | Key | Keterangan |
+|---|---|---|---|---|
+| 1 | id | Integer | Primary Key | ID status pemilih |
+| 2 | user_id | Integer | Foreign Key | Relasi ke mahasiswa |
+| 3 | session_id | Integer | Foreign Key | Relasi ke sesi pemilihan |
+| 4 | has_voted | Boolean | | Status sudah memilih |
+| 5 | voted_at | DateTime | | Waktu memberikan suara |
+| 6 | created_at | DateTime | | Waktu data dibuat |
+| 7 | updated_at | DateTime | | Waktu data diperbarui |
+
+Tabel `face_profiles`
+
+| No | Nama Field | Tipe/Lebar | Key | Keterangan |
+|---|---|---|---|---|
+| 1 | id | Integer | Primary Key | ID profil wajah |
+| 2 | user_id | Integer | Foreign Key, Unique | Relasi ke mahasiswa |
+| 3 | embedding | Blob | | Data *face embedding* (5 pose) |
+| 4 | embedding_version | Varchar(50) | | Versi/skema embedding |
+| 5 | image_path | Varchar(255) | | Path citra (opsional) |
+| 6 | quality_score | Integer | | Skor kualitas citra |
+| 7 | notes | Text | | Catatan |
+| 8 | created_at | DateTime | | Waktu data dibuat |
+| 9 | updated_at | DateTime | | Waktu data diperbarui |
+
+Tabel `face_verification_logs`
+
+| No | Nama Field | Tipe/Lebar | Key | Keterangan |
+|---|---|---|---|---|
+| 1 | id | Integer | Primary Key | ID log verifikasi |
+| 2 | user_id | Integer | Foreign Key | Relasi ke mahasiswa |
+| 3 | result | Enum(valid, invalid, locked) | | Hasil verifikasi |
+| 4 | similarity_score | Float | | Nilai kemiripan wajah |
+| 5 | liveness_score | Float | | Nilai liveness |
+| 6 | reason | Varchar(255) | | Alasan/keterangan hasil |
+| 7 | device_info | Text | | Informasi perangkat |
+| 8 | created_at | DateTime | | Waktu data dibuat |
+| 9 | updated_at | DateTime | | Waktu data diperbarui |
+
+Tabel `assisted_sessions`
+
+| No | Nama Field | Tipe/Lebar | Key | Keterangan |
+|---|---|---|---|---|
+| 1 | id | Integer | Primary Key | ID sesi bantuan |
+| 2 | admin_id | Integer | Foreign Key | Relasi ke admin/panitia |
+| 3 | kiosk_device_id | Integer | Foreign Key | Relasi ke perangkat kiosk |
+| 4 | user_id | Integer | Foreign Key | Relasi ke mahasiswa yang dibantu |
+| 5 | started_at | DateTime | | Waktu mulai sesi |
+| 6 | ended_at | DateTime | | Waktu selesai sesi |
+| 7 | result | Enum(success, failed, cancelled) | | Hasil sesi bantuan |
+| 8 | notes | Text | | Catatan |
+| 9 | created_at | DateTime | | Waktu data dibuat |
+| 10 | updated_at | DateTime | | Waktu data diperbarui |
+
+Tabel `audit_logs`
+
+| No | Nama Field | Tipe/Lebar | Key | Keterangan |
+|---|---|---|---|---|
+| 1 | id | Integer | Primary Key | ID log audit |
+| 2 | actor_type | Varchar(30) | | Jenis pelaku aksi |
+| 3 | actor_id | Integer | | ID pelaku aksi |
+| 4 | action | Varchar(100) | | Aksi yang dilakukan |
+| 5 | target | Varchar(150) | | Objek yang dikenai aksi |
+| 6 | details | Text | | Rincian aksi |
+| 7 | admin_id | Integer | Foreign Key | Relasi ke admin (jika ada) |
+| 8 | created_at | DateTime | | Waktu data dibuat |
+| 9 | updated_at | DateTime | | Waktu data diperbarui |
+
+Keterangan Tabel 4.2 Kamus Data Basis Data Sistem
 
 #### 4.2.4 Registrasi Wajah
 
@@ -195,11 +411,11 @@ Keterangan Gambar 4.17 Proses Verifikasi Wajah Realtime
 
 #### 4.2.6 Liveness Detection
 
-Setelah wajah berhasil terverifikasi, sistem menampilkan satu tantangan *liveness* acak secara otomatis. Tantangan yang tersedia meliputi empat gerakan, yaitu berkedip, tersenyum, menghadap ke kiri, dan menghadap ke kanan. Tantangan dipilih secara acak oleh sistem agar proses verifikasi tidak mudah diprediksi maupun dipalsukan.
+Setelah wajah berhasil terverifikasi, sistem menampilkan satu tantangan *liveness* acak secara otomatis. Tantangan yang tersedia meliputi tiga gerakan, yaitu tersenyum, menghadap ke kiri, dan menghadap ke kanan. Tantangan dipilih secara acak oleh sistem agar proses verifikasi tidak mudah diprediksi maupun dipalsukan.
 
-Penilaian *liveness* dilakukan di sisi backend dengan menganalisis sinyal dari hasil deteksi InsightFace pada *frame* yang dialirkan. Gerakan menghadap ke kiri atau kanan dinilai dari sudut kepala (*yaw*) hasil estimasi pose wajah, gerakan berkedip dinilai dari rasio bukaan mata (*eye aspect ratio*) yang mengecil ketika mata terpejam, dan senyum dinilai dari perubahan rasio lebar mulut terhadap jarak antar-mata. Sistem menyatakan *liveness* valid ketika *frame* yang masuk memenuhi kriteria tantangan yang diminta dalam batas waktu tertentu. Dengan mewajibkan gerakan aktif yang dipilih secara acak, sistem dapat membedakan wajah asli yang hadir langsung di depan kamera dari media tiruan seperti foto atau video yang bersifat statis.
+Penilaian *liveness* dilakukan di sisi backend dengan menganalisis sinyal dari hasil deteksi InsightFace pada *frame* yang dialirkan. Gerakan menghadap ke kiri atau kanan dinilai dari sudut kepala (*yaw*) hasil estimasi pose wajah, sedangkan senyum dinilai dari perubahan rasio lebar mulut terhadap jarak antar-mata. Sistem menyatakan *liveness* valid ketika *frame* yang masuk memenuhi kriteria tantangan yang diminta dalam batas waktu tertentu. Dengan mewajibkan gerakan aktif yang dipilih secara acak, sistem dapat membedakan wajah asli yang hadir langsung di depan kamera dari media tiruan seperti foto atau video yang bersifat statis.
 
-> 📸 **[SS-14]** Tantangan liveness — tangkap saat banner tantangan acak muncul (mis. "Silakan TERSENYUM", "Silakan BERKEDIP", atau "Tolehkan kepala ke KIRI/KANAN").
+> 📸 **[SS-14]** Tantangan liveness — tangkap saat banner tantangan acak muncul (mis. "Silakan TERSENYUM" atau "Tolehkan kepala ke KIRI/KANAN").
 
 Keterangan Gambar 4.18 Proses Liveness Detection
 
@@ -252,7 +468,7 @@ Sebelum pengujian fungsional dilakukan, implementasi diverifikasi terlebih dahul
 | 5 | Pencocokan wajah yang sama | Nilai kemiripan 1,00 (di atas ambang 0,35) |
 | 6 | Tantangan *liveness* pada wajah netral | Sesuai (tidak lolos tanpa gerakan aktif) |
 
-Keterangan Tabel 4.2 Hasil Validasi Implementasi
+Keterangan Tabel 4.3 Hasil Validasi Implementasi
 
 **Tangkapan layar hasil validasi yang perlu disertakan:**
 
@@ -278,7 +494,7 @@ Pengujian fungsional dilakukan untuk mengetahui apakah setiap fitur sistem berja
 | 10 | Pengelolaan kandidat oleh panitia | Tambah/ubah/hapus kandidat | Data kandidat diperbarui | Sesuai |
 | 11 | Rekapitulasi hasil | Akses halaman rekapitulasi | Total suara tampil sesuai data tersimpan | Sesuai |
 
-Keterangan Tabel 4.3 Hasil Pengujian Fungsional Sistem
+Keterangan Tabel 4.4 Hasil Pengujian Fungsional Sistem
 
 Setiap baris pengujian pada tabel di atas dibuktikan dengan *unit* dan *integration test* otomatis (pytest). Tangkapan layar hasil pengujian per modul yang perlu disertakan (jalankan tiap perintah pada folder `backend`, lalu tangkap keluarannya):
 
@@ -308,7 +524,7 @@ Pengujian alur realtime dilakukan untuk memastikan bahwa sistem mampu menjalanka
 | 4 | Validasi *liveness* | Pengguna mengikuti instruksi | Berhasil |
 | 5 | Akses ke halaman voting | Semua validasi lolos | Berhasil |
 
-Keterangan Tabel 4.4 Hasil Pengujian Alur Realtime
+Keterangan Tabel 4.5 Hasil Pengujian Alur Realtime
 
 > 📸 **[SS-26]** Alur realtime di browser — tangkap urutan singkat: pemindaian wajah → wajah cocok → tantangan liveness muncul → akses voting diberikan (dapat berupa 2–3 tangkapan berurutan).
 
@@ -324,7 +540,7 @@ Berdasarkan hasil implementasi dan pengujian, sistem *e-voting* yang dibangun te
 
 Penggunaan verifikasi wajah secara *realtime* memberikan beberapa keuntungan. Pertama, proses verifikasi menjadi lebih natural karena sistem menangkap aliran *frame* kamera, bukan hanya satu gambar statis. Kedua, karena data wajah pada tahap registrasi disimpan dari lima sudut (tengah, atas, bawah, kiri, dan kanan) dan pencocokan mengambil kemiripan tertinggi di antara sudut-sudut tersebut, proses menjadi lebih toleran terhadap perubahan pencahayaan maupun posisi kepala di antara *frame*. Ketiga, proses ini mendukung pengalaman pengguna yang lebih baik karena verifikasi dilakukan langsung melalui kamera tanpa langkah manual yang berlebihan.
 
-Selain itu, penerapan tantangan *liveness* acak satu kali membuat sistem lebih tahan terhadap serangan *spoofing*. Tantangan acak seperti kedip, senyum, atau menghadap ke arah tertentu membuat proses pemalsuan menjadi lebih sulit dilakukan. Hal ini relevan dengan tujuan penelitian yang menekankan pentingnya keamanan autentikasi pada sistem pemungutan suara digital.
+Selain itu, penerapan tantangan *liveness* acak satu kali membuat sistem lebih tahan terhadap serangan *spoofing*. Tantangan acak seperti senyum atau menghadap ke arah tertentu membuat proses pemalsuan menjadi lebih sulit dilakukan. Hal ini relevan dengan tujuan penelitian yang menekankan pentingnya keamanan autentikasi pada sistem pemungutan suara digital.
 
 Jika dilihat dari sisi pengelolaan data, sistem juga mampu memisahkan data identitas pemilih, data wajah, data kandidat, dan data suara. Pemisahan ini penting agar sistem tetap terstruktur dan mudah dipelihara. Data suara tersimpan terpisah dari data wajah sehingga proses voting tetap dapat diaudit tanpa mengganggu kerahasiaan pilihan pemilih.
 
@@ -336,7 +552,7 @@ Walaupun sistem telah berhasil diimplementasikan, terdapat beberapa keterbatasan
 2. Proses *realtime* membutuhkan perangkat kamera yang memadai agar hasil tangkapan *frame* konsisten.
 3. Sistem masih difokuskan pada skala organisasi kampus dan belum dirancang untuk beban pemilih yang sangat besar.
 4. Tantangan *liveness* bersifat *challenge-response* sederhana sehingga masih dapat dikembangkan lagi dengan model *anti-spoofing* yang lebih canggih.
-5. Penilaian tantangan *liveness* mengandalkan ambang batas pada sudut kepala dan rasio *landmark* wajah, sehingga tantangan berbasis arah kepala cenderung paling andal, sementara deteksi senyum dan kedip masih memerlukan kalibrasi ambang batas sesuai karakteristik kamera yang digunakan.
+5. Penilaian tantangan *liveness* mengandalkan ambang batas pada sudut kepala dan rasio *landmark* wajah, sehingga tantangan berbasis arah kepala cenderung paling andal, sementara deteksi senyum masih memerlukan kalibrasi ambang batas sesuai karakteristik kamera yang digunakan.
 
 ### 4.6 Ringkasan Hasil
 

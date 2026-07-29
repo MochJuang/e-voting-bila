@@ -25,6 +25,9 @@ export default function AdminDashboard() {
           <p className="text-sm text-slate-500">Pemilihan Ketua Himpunan — Sesi Aktif</p>
         </div>
         <div className="flex items-center gap-2">
+          <Link to="/admin/akun" className="rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-semibold px-4 py-2">
+            Kelola Akun
+          </Link>
           <Link to="/admin/kiosk" className="rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-4 py-2">
             Buka Kiosk
           </Link>

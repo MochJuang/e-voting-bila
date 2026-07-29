@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from _util import API, make_face_b64
 
-VALID_CHALLENGES = {"smile", "blink", "turn_left", "turn_right"}
+VALID_CHALLENGES = {"smile", "turn_left", "turn_right"}
 
 
 def _verify(client, headers, nim, frame, stage="match", challenge=None, timed_out=False):

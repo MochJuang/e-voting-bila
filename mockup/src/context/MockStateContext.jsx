@@ -187,9 +187,8 @@ export function MockStateProvider({ children }) {
     return response
   }
 
-  const requestPasswordReset = async (nim) => api.auth.requestReset({ nim })
-  const confirmPasswordReset = async ({ nim, code, new_password }) =>
-    api.auth.confirmReset({ nim, code, new_password })
+  const changePassword = async ({ currentPassword, newPassword }) =>
+    api.auth.changePassword({ current_password: currentPassword, new_password: newPassword }, studentToken)
 
   // frames: [{ pose, imageBase64 }]
   const enrollFace = async ({ nim, frames }) => {
@@ -447,8 +446,7 @@ export function MockStateProvider({ children }) {
     findVoter,
     loginStudent,
     registerStudent,
-    requestPasswordReset,
-    confirmPasswordReset,
+    changePassword,
     enrollFace,
     verifyFace,
     loginAdmin,

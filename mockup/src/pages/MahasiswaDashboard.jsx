@@ -1,11 +1,56 @@
-import { useNavigate, Link } from 'react-router-dom'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Screen from '../components/Screen'
+import Modal from '../components/Modal'
 import { useMockState } from '../context/MockStateContext'
 
 export default function MahasiswaDashboard() {
   const navigate = useNavigate()
-  const { currentNim, currentUser, findVoter, logoutStudent } = useMockState()
+  const { currentNim, currentUser, findVoter, logoutStudent, changePassword } = useMockState()
   const voter = currentUser || findVoter(currentNim) || findVoter('2141720001')
+
+  const [passwordModal, setPasswordModal] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [passwordSuccess, setPasswordSuccess] = useState('')
+  const [passwordLoading, setPasswordLoading] = useState(false)
+
+  const closePasswordModal = () => {
+    setPasswordModal(false)
+    setCurrentPassword('')
+    setNewPassword('')
+    setConfirmPassword('')
+    setPasswordError('')
+    setPasswordSuccess('')
+  }
+
+  const submitChangePassword = async (e) => {
+    e.preventDefault()
+    setPasswordError('')
+    setPasswordSuccess('')
+    if (newPassword.length < 8) {
+      setPasswordError('Password baru minimal 8 karakter.')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Konfirmasi password baru tidak cocok.')
+      return
+    }
+    setPasswordLoading(true)
+    try {
+      await changePassword({ currentPassword, newPassword })
+      setPasswordSuccess('Password berhasil diganti.')
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+    } catch (err) {
+      setPasswordError(err.message || 'Gagal mengganti password.')
+    } finally {
+      setPasswordLoading(false)
+    }
+  }
 
   const isAssisted = voter?.modeAkses === 'admin_assisted'
 
@@ -83,22 +128,76 @@ export default function MahasiswaDashboard() {
           </button>
         </div>
 
-        {/* Reset Password */}
+        {/* Ganti Password */}
         <div className="rounded-xl border border-slate-200 p-4">
           <p className="font-semibold text-slate-900 text-sm">Keamanan Akun</p>
-          <p className="text-xs text-slate-500 mt-0.5">Lupa atau ingin mengganti password akun Anda?</p>
-          <Link
-            to="/reset-password"
-            className="mt-3 block text-center w-full rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-semibold py-2"
+          <p className="text-xs text-slate-500 mt-0.5">Ganti password akun Anda secara berkala.</p>
+          <button
+            onClick={() => setPasswordModal(true)}
+            className="mt-3 w-full rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-semibold py-2"
           >
-            Reset Password
-          </Link>
+            Ganti Password
+          </button>
         </div>
       </div>
 
       <button onClick={logout} className="mt-5 w-full text-center text-sm text-slate-400 hover:text-slate-600">
         Keluar
       </button>
+
+      {passwordModal && (
+        <Modal title="Ganti Password" onClose={closePasswordModal}>
+          <form onSubmit={submitChangePassword} className="flex flex-col gap-3">
+            <label className="block text-left">
+              <span className="text-xs font-medium text-slate-600">Password Saat Ini</span>
+              <input
+                type="password"
+                required
+                autoFocus
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </label>
+            <label className="block text-left">
+              <span className="text-xs font-medium text-slate-600">Password Baru</span>
+              <input
+                type="password"
+                required
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Minimal 8 karakter"
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </label>
+            <label className="block text-left">
+              <span className="text-xs font-medium text-slate-600">Konfirmasi Password Baru</span>
+              <input
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </label>
+
+            {passwordError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">{passwordError}</p>
+            )}
+            {passwordSuccess && (
+              <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg p-2">{passwordSuccess}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={passwordLoading}
+              className="mt-1 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold py-2.5 text-sm"
+            >
+              {passwordLoading ? 'Menyimpan...' : 'Simpan Password Baru'}
+            </button>
+          </form>
+        </Modal>
+      )}
     </Screen>
   )
 }

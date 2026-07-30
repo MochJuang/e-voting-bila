@@ -21,8 +21,7 @@ from app.schemas.auth import (
     AuthSessionResponse,
     AuthUserResponse,
     LoginRequest,
-    PasswordResetConfirmRequest,
-    PasswordResetRequest,
+    PasswordChangeRequest,
     RegisterRequest,
     TokenResponse,
 )

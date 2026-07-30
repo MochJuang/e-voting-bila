@@ -22,13 +22,8 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
-class PasswordResetRequest(BaseModel):
-    nim: str = Field(min_length=5, max_length=20)
-
-
-class PasswordResetConfirmRequest(BaseModel):
-    nim: str = Field(min_length=5, max_length=20)
-    code: str = Field(min_length=4, max_length=20)
+class PasswordChangeRequest(BaseModel):
+    current_password: str = Field(min_length=1, max_length=128)
     new_password: str = Field(min_length=8, max_length=128)
 
 

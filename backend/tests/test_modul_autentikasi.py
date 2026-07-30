@@ -1,4 +1,4 @@
-"""Pengujian Modul Autentikasi (registrasi, login, reset password mahasiswa)."""
+"""Pengujian Modul Autentikasi (registrasi, login, ganti password mahasiswa)."""
 
 from __future__ import annotations
 
@@ -38,17 +38,39 @@ def test_login_nim_tidak_terdaftar_ditolak(client):
     assert response.status_code == 404
 
 
-def test_reset_password_dengan_kode_valid(client):
+def test_ganti_password_mandiri_setelah_login(client):
     register_student(client, "2141721099", password="password123")
-    minta = client.post(f"{API}/auth/password/request-reset", json={"nim": "2141721099"})
-    assert minta.status_code == 200
-    konfirmasi = client.post(
-        f"{API}/auth/password/confirm-reset",
-        json={"nim": "2141721099", "code": "123456", "new_password": "passwordbaru1"},
+    login1 = client.post(f"{API}/auth/login", json={"nim": "2141721099", "password": "password123"})
+    token = login1.json()["access_token"]
+
+    ganti = client.post(
+        f"{API}/auth/password/change",
+        json={"current_password": "password123", "new_password": "passwordbaru1"},
+        headers={"Authorization": f"Bearer {token}"},
     )
-    assert konfirmasi.status_code == 200
-    login = client.post(f"{API}/auth/login", json={"nim": "2141721099", "password": "passwordbaru1"})
-    assert login.status_code == 200
+    assert ganti.status_code == 200, ganti.text
+
+    login_baru = client.post(f"{API}/auth/login", json={"nim": "2141721099", "password": "passwordbaru1"})
+    assert login_baru.status_code == 200
+    login_lama = client.post(f"{API}/auth/login", json={"nim": "2141721099", "password": "password123"})
+    assert login_lama.status_code == 401
+
+
+def test_ganti_password_dengan_password_lama_salah_ditolak(client, student):
+    response = client.post(
+        f"{API}/auth/password/change",
+        json={"current_password": "salahsekali", "new_password": "passwordbaru1"},
+        headers=student["auth"],
+    )
+    assert response.status_code == 401
+
+
+def test_ganti_password_tanpa_login_ditolak(client):
+    response = client.post(
+        f"{API}/auth/password/change",
+        json={"current_password": "password123", "new_password": "passwordbaru1"},
+    )
+    assert response.status_code == 401
 
 
 def test_ambil_profil_dengan_token(client, student):

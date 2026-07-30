@@ -81,8 +81,7 @@ export const api = {
     login: (body) => request('/auth/login', { method: 'POST', body }),
     register: (body) => request('/auth/register', { method: 'POST', body }),
     me: (token) => request('/auth/me', { token }),
-    requestReset: (body) => request('/auth/password/request-reset', { method: 'POST', body }),
-    confirmReset: (body) => request('/auth/password/confirm-reset', { method: 'POST', body }),
+    changePassword: (body, token) => request('/auth/password/change', { method: 'POST', body, token }),
   },
   voters: {
     me: (token) => request('/voters/me', { token }),

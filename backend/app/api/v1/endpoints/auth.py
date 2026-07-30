@@ -10,8 +10,7 @@ from app.schemas import (
     AuthSessionResponse,
     AuthUserResponse,
     LoginRequest,
-    PasswordResetConfirmRequest,
-    PasswordResetRequest,
+    PasswordChangeRequest,
     RegisterRequest,
     TokenResponse,
 )
@@ -82,25 +81,21 @@ def login(payload: LoginRequest, db: DbSession):
     return AuthSessionResponse(user=_user_to_response(user), access_token=token)
 
 
-@router.post("/password/request-reset", response_model=MessageResponse)
-def request_password_reset(payload: PasswordResetRequest, db: DbSession):
-    user = db.query(User).filter(User.nim == payload.nim).first()
-    if not user and not find_default_voter(payload.nim):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="NIM tidak ditemukan")
-    return MessageResponse(message="Kode verifikasi reset password telah dikirim ke email kampus.")
+@router.post("/password/change", response_model=MessageResponse)
+def change_password(
+    payload: PasswordChangeRequest, db: DbSession, current_user: User = Depends(get_current_user)
+):
+    """Ganti password mandiri untuk mahasiswa yang sudah login (butuh password lama).
 
+    Lupa password sebelum login bukan lagi jalur mandiri — mahasiswa harus
+    menghubungi panitia agar direset lewat panel admin (Kelola Mahasiswa).
+    """
+    if not current_user.password_hash or not verify_password(payload.current_password, current_user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Password lama salah")
 
-@router.post("/password/confirm-reset", response_model=MessageResponse)
-def confirm_password_reset(payload: PasswordResetConfirmRequest, db: DbSession):
-    if payload.code != "123456":
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Kode verifikasi tidak valid")
-
-    user = db.query(User).filter(User.nim == payload.nim).first()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="NIM tidak ditemukan")
-    user.password_hash = hash_password(payload.new_password)
+    current_user.password_hash = hash_password(payload.new_password)
     db.commit()
-    return MessageResponse(message="Password berhasil direset.")
+    return MessageResponse(message="Password berhasil diganti.")
 
 
 @router.get("/me", response_model=AuthUserResponse)

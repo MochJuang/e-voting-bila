@@ -115,41 +115,14 @@ def enroll_face(payload: FaceEnrollRequest, db: DbSession, current_user: User = 
     )
 
 
-def _locked_response(
-    db: DbSession,
-    user: User,
-    stage: VerifyStage,
-    invalid_count: int,
-    image_base64: str | None = None,
-) -> FaceVerifyResponse:
-    user.is_locked = True
-    _log_verification(
-        db,
-        user,
-        VerificationResult.LOCKED,
-        reason="Percobaan melebihi batas",
-        snapshot_base64=_try_snapshot(image_base64),
-    )
-    db.commit()
-    return FaceVerifyResponse(
-        stage=stage,
-        verified=False,
-        matched=False,
-        result=VerificationResult.LOCKED,
-        retry_count=invalid_count,
-        lock_applied=True,
-        message="Akun dikunci sementara. Hubungi panitia untuk verifikasi manual.",
-    )
-
-
 @router.post("/verify", response_model=FaceVerifyResponse)
 def verify_face(payload: FaceVerifyRequest, db: DbSession, current_user: User = Depends(get_current_user)):
     if current_user.nim != payload.nim:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tidak bisa verifikasi untuk NIM lain")
 
+    # Tidak ada batas percobaan/penguncian akun — mahasiswa boleh mengulang verifikasi
+    # wajah & liveness tanpa batas hingga berhasil.
     invalid_count = _invalid_count(db, current_user)
-    if current_user.is_locked or invalid_count >= settings.face_max_retries:
-        return _locked_response(db, current_user, payload.stage, invalid_count, payload.image_base64)
 
     if not current_user.face_enrolled:
         return FaceVerifyResponse(
@@ -208,7 +181,7 @@ def verify_face(payload: FaceVerifyRequest, db: DbSession, current_user: User = 
     # --------------------------------------------------------------- #
     # STAGE 2: liveness challenge
     # --------------------------------------------------------------- #
-    # Timeout dari client: catat sebagai percobaan gagal (untuk anti-abuse / lock).
+    # Timeout dari client: catat sebagai percobaan gagal (untuk statistik/audit saja).
     if payload.timed_out:
         _log_verification(
             db,
@@ -217,16 +190,13 @@ def verify_face(payload: FaceVerifyRequest, db: DbSession, current_user: User = 
             reason="Liveness timeout",
             snapshot_base64=_try_snapshot(payload.image_base64),
         )
-        new_invalid = invalid_count + 1
-        if new_invalid >= settings.face_max_retries:
-            return _locked_response(db, current_user, VerifyStage.LIVENESS, new_invalid, payload.image_base64)
         db.commit()
         return FaceVerifyResponse(
             stage=VerifyStage.LIVENESS,
             matched=True,
             result=VerificationResult.INVALID,
             challenge=payload.challenge,
-            retry_count=new_invalid,
+            retry_count=invalid_count + 1,
             message="Waktu liveness habis. Silakan coba lagi.",
         )
 

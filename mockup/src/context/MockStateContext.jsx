@@ -223,7 +223,7 @@ export function MockStateProvider({ children }) {
       setVerificationToken(response.verification_token)
     }
     // Hindari refresh snapshot pada tiap frame streaming; cukup saat final.
-    if (response.verified || response.lock_applied) {
+    if (response.verified) {
       await refreshStudentSnapshot(studentToken)
     }
     return response

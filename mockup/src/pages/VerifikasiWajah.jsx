@@ -32,7 +32,7 @@ export default function VerifikasiWajah({ onValid, embedded = false }) {
   const { currentNim, findVoter, verifyFace } = useMockState()
   const nim = currentNim ?? '2141721001'
 
-  const [phase, setPhase] = useState('scanning') // scanning | liveness | success | invalid | locked
+  const [phase, setPhase] = useState('scanning') // scanning | liveness | success | invalid
   const [challenge, setChallenge] = useState(null)
   const [similarity, setSimilarity] = useState(null)
   const [message, setMessage] = useState('')
@@ -87,13 +87,6 @@ export default function VerifikasiWajah({ onValid, embedded = false }) {
     setMessage(res?.message || 'Verifikasi berhasil.')
   }
 
-  const toLocked = () => {
-    stoppedRef.current = true
-    clearTimers()
-    stopStream()
-    setPhase('locked')
-  }
-
   const toInvalid = (msg) => {
     stoppedRef.current = true
     clearTimers()
@@ -116,8 +109,7 @@ export default function VerifikasiWajah({ onValid, embedded = false }) {
           timedOut: true,
         })
         setAttempts(res.retry_count ?? 0)
-        if (res.lock_applied) toLocked()
-        else toInvalid(res.message || 'Waktu liveness habis.')
+        toInvalid(res.message || 'Waktu liveness habis.')
       } catch (err) {
         toInvalid(err.message || 'Waktu liveness habis.')
       }
@@ -140,7 +132,6 @@ export default function VerifikasiWajah({ onValid, embedded = false }) {
         const res = await verifyRef.current({ nim: nimRef.current, imageBase64: frame, stage: 'match' })
         setSimilarity(res.similarity_score ?? null)
         setAttempts(res.retry_count ?? 0)
-        if (res.lock_applied) return toLocked()
         if (res.matched && res.challenge) {
           challengeRef.current = res.challenge
           setChallenge(res.challenge)
@@ -160,7 +151,6 @@ export default function VerifikasiWajah({ onValid, embedded = false }) {
         })
         setSimilarity(res.similarity_score ?? null)
         if (res.verified) return toSuccess(res)
-        if (res.lock_applied) return toLocked()
         setMessage(res.message || '')
       }
     } catch (err) {
@@ -265,7 +255,6 @@ export default function VerifikasiWajah({ onValid, embedded = false }) {
 
         {phase === 'success' && <div className="text-6xl z-20">✅</div>}
         {phase === 'invalid' && <div className="text-6xl z-20">⚠️</div>}
-        {phase === 'locked' && <div className="text-6xl z-20">🔒</div>}
       </div>
 
       {/* Indikator similarity */}
@@ -300,18 +289,12 @@ export default function VerifikasiWajah({ onValid, embedded = false }) {
       {phase === 'invalid' && (
         <div className="flex flex-col gap-2">
           <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-2 text-center">
-            {message} {attempts > 0 ? `(percobaan ${attempts}/3)` : ''}
+            {message} {attempts > 0 ? `(percobaan ke-${attempts})` : ''}
           </p>
           <button onClick={restart} className="w-full rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5">
             Coba Lagi
           </button>
         </div>
-      )}
-
-      {phase === 'locked' && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-2 text-center">
-          🔒 Akun dikunci sementara setelah beberapa percobaan gagal. Hubungi panitia untuk verifikasi manual.
-        </p>
       )}
     </>
   )

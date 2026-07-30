@@ -103,6 +103,42 @@ def test_kelola_akun_admin(client, admin_auth):
     assert deleted.status_code == 200
 
 
+def test_hapus_mahasiswa_berhasil(client, admin_auth):
+    register_student(client, "2141721055")
+    response = client.delete(f"{API}/admin/voters/2141721055", headers=admin_auth)
+    assert response.status_code == 200, response.text
+
+    # NIM sudah tidak ada -> bisa didaftarkan ulang dari nol tanpa bentrok "sudah terdaftar".
+    daftar_ulang = register_student(client, "2141721055")
+    assert daftar_ulang.status_code == 200
+
+
+def test_hapus_mahasiswa_yang_sudah_enroll_wajah_ikut_menghapus_data_terkait(
+    client, admin_auth, enrolled_student
+):
+    """Menghapus mahasiswa harus ikut menghapus profil wajah & log verifikasinya (cascade)."""
+    response = client.delete(f"{API}/admin/voters/{enrolled_student['nim']}", headers=admin_auth)
+    assert response.status_code == 200, response.text
+
+    foto = client.get(f"{API}/admin/voters/{enrolled_student['nim']}/face-photo", headers=admin_auth)
+    assert foto.status_code == 404
+
+    # Token lama milik mahasiswa yang sudah dihapus tidak lagi valid.
+    profil = client.get(f"{API}/auth/me", headers=enrolled_student["auth"])
+    assert profil.status_code == 401
+
+
+def test_hapus_mahasiswa_tidak_ditemukan(client, admin_auth):
+    response = client.delete(f"{API}/admin/voters/2141729999", headers=admin_auth)
+    assert response.status_code == 404
+
+
+def test_hapus_mahasiswa_tanpa_token_admin_ditolak(client):
+    register_student(client, "2141721066")
+    response = client.delete(f"{API}/admin/voters/2141721066")
+    assert response.status_code == 401
+
+
 def test_edit_kelas_dan_mode_akses_mahasiswa(client, admin_auth):
     register_student(client, "2141721077")
     response = client.patch(

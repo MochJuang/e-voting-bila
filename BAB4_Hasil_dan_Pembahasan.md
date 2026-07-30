@@ -387,7 +387,7 @@ Keterangan Gambar 4.16 Proses Pemindaian Wajah (Registrasi 5 Pose)
 
 Verifikasi wajah dilakukan secara *realtime* dengan mengalirkan (*streaming*) *frame* kamera ke backend secara berkala, bukan melalui satu gambar statis. Pendekatan ini bertujuan memperoleh sampel wajah yang lebih representatif sehingga pencocokan identitas menjadi lebih stabil.
 
-Alur verifikasi dimulai ketika kamera aktif dan sistem secara berkala menangkap *frame* dari webcam, lalu mengirimkannya ke backend untuk dianalisis. Backend mengekstraksi embedding dari tiap *frame* dan menghitung tingkat kemiripan (*cosine similarity*) terhadap seluruh embedding pose yang tersimpan pada profil pengguna, kemudian mengambil nilai kemiripan tertinggi. Jika nilai tersebut melebihi ambang batas yang ditentukan, maka pengguna dinyatakan cocok dan proses berlanjut secara otomatis ke tahap *liveness detection*. Selama wajah belum cocok, sistem terus memindai tanpa menghitungnya sebagai percobaan gagal, sehingga tidak memicu penguncian akun secara keliru.
+Alur verifikasi dimulai ketika kamera aktif dan sistem secara berkala menangkap *frame* dari webcam, lalu mengirimkannya ke backend untuk dianalisis. Backend mengekstraksi embedding dari tiap *frame* dan menghitung tingkat kemiripan (*cosine similarity*) terhadap seluruh embedding pose yang tersimpan pada profil pengguna, kemudian mengambil nilai kemiripan tertinggi. Jika nilai tersebut melebihi ambang batas yang ditentukan, maka pengguna dinyatakan cocok dan proses berlanjut secara otomatis ke tahap *liveness detection*. Sistem tidak membatasi jumlah percobaan — selama wajah maupun tantangan *liveness* belum sesuai, mahasiswa dapat terus mengulang proses pemindaian hingga berhasil, tanpa risiko akun terkunci.
 
 ```mermaid
 flowchart TD

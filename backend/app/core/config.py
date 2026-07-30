@@ -21,7 +21,6 @@ class Settings(BaseSettings):
     jwt_access_token_expire_minutes: int = 60
 
     face_match_threshold: float = 0.35
-    face_max_retries: int = 3
     face_model_name: str = "buffalo_l"
 
     # Enrollment multi-pose: pose yang wajib di-scan (tengah, atas, kanan, bawah, kiri)

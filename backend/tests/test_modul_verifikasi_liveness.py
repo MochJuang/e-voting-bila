@@ -63,9 +63,10 @@ def test_liveness_valid_menerbitkan_token(client, enrolled_student):
     assert body["verification_token"]
 
 
-def test_akun_terkunci_setelah_percobaan_gagal(client, enrolled_student):
+def test_percobaan_gagal_berulang_tidak_mengunci_akun(client, enrolled_student):
+    """Tidak ada batas percobaan — mahasiswa boleh mengulang verifikasi tanpa batas."""
     body = None
-    for _ in range(3):
+    for _ in range(5):
         body = _verify(
             client,
             enrolled_student["auth"],
@@ -75,8 +76,21 @@ def test_akun_terkunci_setelah_percobaan_gagal(client, enrolled_student):
             challenge="smile",
             timed_out=True,
         ).json()
-    assert body["result"] == "locked"
-    assert body["lock_applied"] is True
+        assert body["result"] == "invalid"
+        assert body["lock_applied"] is False
+
+    # Setelah lima kali gagal, mahasiswa tetap bisa lanjut mencoba dan berhasil.
+    match = _verify(client, enrolled_student["auth"], enrolled_student["nim"], enrolled_student["frame"]).json()
+    assert match["matched"] is True
+    liveness = _verify(
+        client,
+        enrolled_student["auth"],
+        enrolled_student["nim"],
+        enrolled_student["frame"],
+        stage="liveness",
+        challenge=match["challenge"],
+    ).json()
+    assert liveness["verified"] is True
 
 
 def test_foto_registrasi_tampil_setelah_enroll(client, enrolled_student):

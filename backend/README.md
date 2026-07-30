@@ -85,7 +85,8 @@ backend/
     (`smile` / `turn_left` / `turn_right`).
   - `stage=liveness`: backend memeriksa gerakan sesuai challenge (senyum/menoleh) dari
     pose & landmark InsightFace; jika lolos → `verification_token` diterbitkan.
-  - `timed_out=true`: dicatat sebagai percobaan gagal (untuk penguncian anti-abuse).
+  - `timed_out=true`: dicatat sebagai percobaan gagal (untuk statistik/audit); tidak ada batas
+    jumlah percobaan — mahasiswa boleh mengulang verifikasi tanpa batas hingga berhasil.
 - Jika model InsightFace tidak tersedia di runtime, service otomatis memakai **mode fallback**
   (embedding berbasis hash + liveness disimulasikan) sehingga alur tetap dapat didemokan.
 - Ambang batas dapat dikonfigurasi di `.env` / `config.py`:

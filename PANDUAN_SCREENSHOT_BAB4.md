@@ -35,7 +35,7 @@ Akun uji: mahasiswa `2141721001` (password `password`) · panitia `panitia1` (pa
 | SS-11 | Struktur tabel basis data | Adminer http://localhost:8080 (server `mysql`, user `root`, password kosong) |
 | SS-12 | Registrasi wajah — pemindaian 5 pose | `/registrasi-wajah` |
 | SS-13 | Verifikasi wajah realtime (bar similarity) | `/verifikasi-wajah` |
-| SS-14 | Banner tantangan liveness (senyum/hadap kiri/hadap kanan) | `/verifikasi-wajah` (setelah wajah cocok) |
+| SS-14 | Banner tantangan liveness (hadap kiri/hadap kanan) | `/verifikasi-wajah` (setelah wajah cocok) |
 | SS-15 | Booth voting (daftar kandidat) | `/booth` |
 
 ## B. Pengujian (§4.3)
@@ -44,7 +44,7 @@ Jalankan pada folder `backend` (aktifkan virtualenv bila perlu: `source .venv/bi
 
 | Kode | Apa yang di-capture | Perintah |
 |---|---|---|
-| SS-16 | Seluruh test PASSED (40 test) | `pytest -v` |
+| SS-16 | Seluruh test PASSED (53 test) | `pytest -v` |
 | SS-17 | Build frontend berhasil | `cd mockup && npm run build` |
 | SS-18 | Validasi model InsightFace (similarity 1,00; 5/5 pose) | jalankan skrip validasi biometrik (lihat di bawah) |
 | SS-19 | Modul Autentikasi | `pytest tests/test_modul_autentikasi.py -v` |
@@ -70,5 +70,5 @@ python validate_insightface.py wajah.jpg orang_lain.jpg   # + uji penolakan waja
 ```
 
 Keluaran yang di-screenshot menampilkan: mode model (InsightFace ASLI), 1 wajah
-terdeteksi, sinyal biometrik (yaw/pitch/ear/smile), **5/5 pose diterima**,
-**similarity 1,000 → COCOK**, dan tantangan liveness menolak wajah statis.
+terdeteksi, sinyal biometrik (yaw/pitch), **5/5 pose diterima**,
+**similarity 1,000 → COCOK**, dan tantangan liveness (menoleh kiri/kanan) menolak wajah statis.

@@ -34,7 +34,6 @@ class FacePose(str, Enum):
 class LivenessChallenge(str, Enum):
     """Tantangan liveness acak saat verifikasi realtime."""
 
-    SMILE = "smile"  # tersenyum
     TURN_LEFT = "turn_left"  # hadap kiri
     TURN_RIGHT = "turn_right"  # hadap kanan
 

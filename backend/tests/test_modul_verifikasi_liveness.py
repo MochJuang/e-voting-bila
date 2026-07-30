@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from _util import API, make_face_b64
 
-VALID_CHALLENGES = {"smile", "turn_left", "turn_right"}
+VALID_CHALLENGES = {"turn_left", "turn_right"}
 
 
 def _verify(client, headers, nim, frame, stage="match", challenge=None, timed_out=False):
@@ -73,7 +73,7 @@ def test_percobaan_gagal_berulang_tidak_mengunci_akun(client, enrolled_student):
             enrolled_student["nim"],
             enrolled_student["frame"],
             stage="liveness",
-            challenge="smile",
+            challenge="turn_left",
             timed_out=True,
         ).json()
         assert body["result"] == "invalid"

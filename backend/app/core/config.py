@@ -34,9 +34,6 @@ class Settings(BaseSettings):
 
     # Liveness challenge thresholds
     liveness_yaw_threshold: float = 18.0  # derajat menoleh untuk turn_left/turn_right
-    # rasio lebar mulut / jarak antar-mata; di atas ini = tersenyum.
-    # Wajah netral terukur ~1.0; senyum melebarkan mulut. Kalibrasi per-kamera bila perlu.
-    liveness_smile_threshold: float = 1.15
     liveness_min_score: float = 0.5
 
     upload_dir: str = "storage"

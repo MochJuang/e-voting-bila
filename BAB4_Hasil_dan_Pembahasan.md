@@ -411,11 +411,11 @@ Keterangan Gambar 4.17 Proses Verifikasi Wajah Realtime
 
 #### 4.2.6 Liveness Detection
 
-Setelah wajah berhasil terverifikasi, sistem menampilkan satu tantangan *liveness* acak secara otomatis. Tantangan yang tersedia meliputi tiga gerakan, yaitu tersenyum, menghadap ke kiri, dan menghadap ke kanan. Tantangan dipilih secara acak oleh sistem agar proses verifikasi tidak mudah diprediksi maupun dipalsukan.
+Setelah wajah berhasil terverifikasi, sistem menampilkan satu tantangan *liveness* acak secara otomatis. Tantangan yang tersedia meliputi dua gerakan, yaitu menghadap ke kiri dan menghadap ke kanan. Tantangan dipilih secara acak oleh sistem agar proses verifikasi tidak mudah diprediksi maupun dipalsukan.
 
-Penilaian *liveness* dilakukan di sisi backend dengan menganalisis sinyal dari hasil deteksi InsightFace pada *frame* yang dialirkan. Gerakan menghadap ke kiri atau kanan dinilai dari sudut kepala (*yaw*) hasil estimasi pose wajah, sedangkan senyum dinilai dari perubahan rasio lebar mulut terhadap jarak antar-mata. Sistem menyatakan *liveness* valid ketika *frame* yang masuk memenuhi kriteria tantangan yang diminta dalam batas waktu tertentu. Dengan mewajibkan gerakan aktif yang dipilih secara acak, sistem dapat membedakan wajah asli yang hadir langsung di depan kamera dari media tiruan seperti foto atau video yang bersifat statis.
+Penilaian *liveness* dilakukan di sisi backend dengan menganalisis sinyal dari hasil deteksi InsightFace pada *frame* yang dialirkan. Gerakan menghadap ke kiri atau kanan dinilai dari sudut kepala (*yaw*) hasil estimasi pose wajah, dibandingkan terhadap ambang batas derajat kemiringan tertentu. Sistem menyatakan *liveness* valid ketika *frame* yang masuk memenuhi kriteria tantangan yang diminta dalam batas waktu tertentu. Dengan mewajibkan gerakan aktif yang dipilih secara acak, sistem dapat membedakan wajah asli yang hadir langsung di depan kamera dari media tiruan seperti foto atau video yang bersifat statis.
 
-> 📸 **[SS-14]** Tantangan liveness — tangkap saat banner tantangan acak muncul (mis. "Silakan TERSENYUM" atau "Tolehkan kepala ke KIRI/KANAN").
+> 📸 **[SS-14]** Tantangan liveness — tangkap saat banner tantangan acak muncul (mis. "Tolehkan kepala ke KIRI" atau "Tolehkan kepala ke KANAN").
 
 Keterangan Gambar 4.18 Proses Liveness Detection
 
@@ -540,7 +540,7 @@ Berdasarkan hasil implementasi dan pengujian, sistem *e-voting* yang dibangun te
 
 Penggunaan verifikasi wajah secara *realtime* memberikan beberapa keuntungan. Pertama, proses verifikasi menjadi lebih natural karena sistem menangkap aliran *frame* kamera, bukan hanya satu gambar statis. Kedua, karena data wajah pada tahap registrasi disimpan dari lima sudut (tengah, atas, bawah, kiri, dan kanan) dan pencocokan mengambil kemiripan tertinggi di antara sudut-sudut tersebut, proses menjadi lebih toleran terhadap perubahan pencahayaan maupun posisi kepala di antara *frame*. Ketiga, proses ini mendukung pengalaman pengguna yang lebih baik karena verifikasi dilakukan langsung melalui kamera tanpa langkah manual yang berlebihan.
 
-Selain itu, penerapan tantangan *liveness* acak satu kali membuat sistem lebih tahan terhadap serangan *spoofing*. Tantangan acak seperti senyum atau menghadap ke arah tertentu membuat proses pemalsuan menjadi lebih sulit dilakukan. Hal ini relevan dengan tujuan penelitian yang menekankan pentingnya keamanan autentikasi pada sistem pemungutan suara digital.
+Selain itu, penerapan tantangan *liveness* acak satu kali membuat sistem lebih tahan terhadap serangan *spoofing*. Tantangan acak berupa menghadap ke arah tertentu (kiri atau kanan) membuat proses pemalsuan menjadi lebih sulit dilakukan. Hal ini relevan dengan tujuan penelitian yang menekankan pentingnya keamanan autentikasi pada sistem pemungutan suara digital.
 
 Jika dilihat dari sisi pengelolaan data, sistem juga mampu memisahkan data identitas pemilih, data wajah, data kandidat, dan data suara. Pemisahan ini penting agar sistem tetap terstruktur dan mudah dipelihara. Data suara tersimpan terpisah dari data wajah sehingga proses voting tetap dapat diaudit tanpa mengganggu kerahasiaan pilihan pemilih.
 
@@ -552,7 +552,7 @@ Walaupun sistem telah berhasil diimplementasikan, terdapat beberapa keterbatasan
 2. Proses *realtime* membutuhkan perangkat kamera yang memadai agar hasil tangkapan *frame* konsisten.
 3. Sistem masih difokuskan pada skala organisasi kampus dan belum dirancang untuk beban pemilih yang sangat besar.
 4. Tantangan *liveness* bersifat *challenge-response* sederhana sehingga masih dapat dikembangkan lagi dengan model *anti-spoofing* yang lebih canggih.
-5. Penilaian tantangan *liveness* mengandalkan ambang batas pada sudut kepala dan rasio *landmark* wajah, sehingga tantangan berbasis arah kepala cenderung paling andal, sementara deteksi senyum masih memerlukan kalibrasi ambang batas sesuai karakteristik kamera yang digunakan.
+5. Tantangan *liveness* saat ini dibatasi pada dua gerakan arah kepala (menoleh kiri/kanan) karena dinilai paling andal; gerakan lain seperti senyum atau kedip mata sempat diuji coba namun dihilangkan karena deteksinya kurang stabil pada kondisi kamera dan pencahayaan yang bervariasi.
 
 ### 4.6 Ringkasan Hasil
 

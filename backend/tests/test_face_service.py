@@ -86,6 +86,6 @@ def test_verify_match_wajah_lain_tidak_cocok():
 
 
 def test_evaluate_liveness_fallback_lolos_pada_kualitas_baik():
-    passed, analysis, _ = face_service.evaluate_liveness(frame_bytes(seed=7), LivenessChallenge.SMILE)
+    passed, analysis, _ = face_service.evaluate_liveness(frame_bytes(seed=7), LivenessChallenge.TURN_LEFT)
     assert passed is True
     assert analysis.quality_score >= 60

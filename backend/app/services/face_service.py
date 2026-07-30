@@ -397,12 +397,6 @@ class FaceService:
                 else "Kualitas frame kurang, coba lagi dengan pencahayaan lebih baik."
             )
 
-        if challenge == LivenessChallenge.SMILE:
-            if analysis.smile_ratio is None:
-                return analysis.quality_score >= 60, analysis, "Senyum tidak dapat diukur, memakai kualitas frame."
-            passed = analysis.smile_ratio >= settings.liveness_smile_threshold
-            return passed, analysis, ("Senyum terdeteksi." if passed else "Tersenyumlah lebih lebar.")
-
         if challenge in (LivenessChallenge.TURN_LEFT, LivenessChallenge.TURN_RIGHT):
             if analysis.yaw is None:
                 return analysis.quality_score >= 60, analysis, "Arah kepala tidak terukur, memakai kualitas frame."

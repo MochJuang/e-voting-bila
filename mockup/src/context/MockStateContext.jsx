@@ -355,6 +355,9 @@ export function MockStateProvider({ children }) {
   const updateAdminAccount = async (id, patch) => api.admin.updateAccount(id, patch, adminToken)
   const deleteAdminAccount = async (id) => api.admin.deleteAccount(id, adminToken)
 
+  const getMyFacePhoto = async () => api.voters.facePhoto(studentToken)
+  const getVoterFacePhoto = async (nim) => api.admin.voterFacePhoto(nim, adminToken)
+
   const deleteVoter = async (nim) => {
     const response = await api.admin.deleteVoter(nim, adminToken)
     await refreshAdminSnapshot(adminToken)
@@ -463,6 +466,8 @@ export function MockStateProvider({ children }) {
     addAdminAccount,
     updateAdminAccount,
     deleteAdminAccount,
+    getMyFacePhoto,
+    getVoterFacePhoto,
     addJabatan,
     updateJabatan,
     deleteJabatan,

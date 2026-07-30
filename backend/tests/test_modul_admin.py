@@ -71,6 +71,14 @@ def test_reset_password_mahasiswa_oleh_admin(client, admin_auth):
     assert client.post(f"{API}/auth/login", json={"nim": "2141721088", "password": "password123"}).status_code == 401
 
 
+def test_admin_melihat_foto_wajah_mahasiswa(client, admin_auth, enrolled_student):
+    response = client.get(f"{API}/admin/voters/{enrolled_student['nim']}/face-photo", headers=admin_auth)
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["nim"] == enrolled_student["nim"]
+    assert body["enrolled_photo"].startswith("data:image/jpeg;base64,")
+
+
 def test_kelola_akun_admin(client, admin_auth):
     created = client.post(
         f"{API}/admin/accounts",

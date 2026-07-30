@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 from app.schemas.common import ORMModel
@@ -67,3 +69,15 @@ class FaceLogResponse(ORMModel):
     liveness_score: float | None = None
     reason: str | None = None
     device_info: str | None = None
+
+
+# --------------------------------------------------------------------------- #
+# Tampilan foto: wajah hasil registrasi & cuplikan saat proses memilih
+# --------------------------------------------------------------------------- #
+class FacePhotoResponse(BaseModel):
+    nim: str
+    enrolled_photo: str | None = None
+    enrolled_at: datetime | None = None
+    last_verification_photo: str | None = None
+    last_verification_at: datetime | None = None
+    last_verification_result: VerificationResult | None = None

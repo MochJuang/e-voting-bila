@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Screen from '../components/Screen'
 import Modal from '../components/Modal'
@@ -6,8 +6,29 @@ import { useMockState } from '../context/MockStateContext'
 
 export default function MahasiswaDashboard() {
   const navigate = useNavigate()
-  const { currentNim, currentUser, findVoter, logoutStudent, changePassword } = useMockState()
+  const { currentNim, currentUser, findVoter, logoutStudent, changePassword, getMyFacePhoto } = useMockState()
   const voter = currentUser || findVoter(currentNim) || findVoter('2141720001')
+
+  const [facePhoto, setFacePhoto] = useState(null)
+
+  useEffect(() => {
+    if (!voter?.faceEnrolled) {
+      setFacePhoto(null)
+      return
+    }
+    let cancelled = false
+    getMyFacePhoto()
+      .then((data) => {
+        if (!cancelled) setFacePhoto(data)
+      })
+      .catch(() => {
+        if (!cancelled) setFacePhoto(null)
+      })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voter?.faceEnrolled, voter?.hasVoted])
 
   const [passwordModal, setPasswordModal] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
@@ -80,11 +101,22 @@ export default function MahasiswaDashboard() {
         {/* Registrasi */}
         <div className="rounded-xl border border-slate-200 p-4">
           <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="font-semibold text-slate-900 text-sm">Registrasi Wajah</p>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {voter?.faceEnrolled ? 'Wajah Anda sudah terdaftar di sistem.' : 'Anda belum mendaftarkan wajah. Wajib dilakukan sebelum memilih.'}
-              </p>
+            <div className="flex items-start gap-3">
+              {voter?.faceEnrolled && (
+                <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
+                  {facePhoto?.enrolled_photo ? (
+                    <img src={facePhoto.enrolled_photo} alt="Foto registrasi wajah" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-300 text-xs">…</div>
+                  )}
+                </div>
+              )}
+              <div>
+                <p className="font-semibold text-slate-900 text-sm">Registrasi Wajah</p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {voter?.faceEnrolled ? 'Wajah Anda sudah terdaftar di sistem.' : 'Anda belum mendaftarkan wajah. Wajib dilakukan sebelum memilih.'}
+                </p>
+              </div>
             </div>
             <span className={`shrink-0 text-xs rounded-full px-2 py-0.5 ${voter?.faceEnrolled ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
               {voter?.faceEnrolled ? '✓ Terdaftar' : 'Belum'}
@@ -126,6 +158,22 @@ export default function MahasiswaDashboard() {
           >
             {isAssisted ? 'Kunjungi Kiosk Panitia' : voter?.hasVoted ? 'Sudah Memilih' : 'Mulai Verifikasi & Pilih'}
           </button>
+
+          {facePhoto?.last_verification_photo && (
+            <div className="mt-3 flex items-center gap-3 rounded-lg bg-slate-50 border border-slate-100 p-2.5">
+              <img
+                src={facePhoto.last_verification_photo}
+                alt="Wajah saat verifikasi terakhir"
+                className="w-12 h-12 rounded-lg object-cover border border-slate-200"
+              />
+              <div>
+                <p className="text-xs font-medium text-slate-600">Wajah saat verifikasi terakhir</p>
+                <p className="text-[11px] text-slate-400">
+                  {new Date(facePhoto.last_verification_at).toLocaleString('id-ID')}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Ganti Password */}

@@ -77,3 +77,28 @@ def test_akun_terkunci_setelah_percobaan_gagal(client, enrolled_student):
         ).json()
     assert body["result"] == "locked"
     assert body["lock_applied"] is True
+
+
+def test_foto_registrasi_tampil_setelah_enroll(client, enrolled_student):
+    response = client.get(f"{API}/voters/me/face-photo", headers=enrolled_student["auth"])
+    assert response.status_code == 200
+    body = response.json()
+    assert body["enrolled_photo"].startswith("data:image/jpeg;base64,")
+    assert body["last_verification_photo"] is None
+
+
+def test_foto_verifikasi_tampil_setelah_berhasil_memilih_terverifikasi(client, enrolled_student):
+    match = _verify(client, enrolled_student["auth"], enrolled_student["nim"], enrolled_student["frame"]).json()
+    _verify(
+        client,
+        enrolled_student["auth"],
+        enrolled_student["nim"],
+        enrolled_student["frame"],
+        stage="liveness",
+        challenge=match["challenge"],
+    )
+
+    response = client.get(f"{API}/voters/me/face-photo", headers=enrolled_student["auth"])
+    body = response.json()
+    assert body["last_verification_photo"].startswith("data:image/jpeg;base64,")
+    assert body["last_verification_result"] == "valid"

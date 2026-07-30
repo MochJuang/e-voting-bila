@@ -94,6 +94,28 @@ class FaceService:
         except Exception as exc:
             raise FaceServiceError("Format base64 tidak valid") from exc
 
+    def to_display_photo(self, image_bytes: bytes, max_side: int = 360, quality: int = 70) -> str:
+        """Kompres & ubah frame menjadi data URL JPEG kecil untuk ditampilkan kembali
+        (foto registrasi / cuplikan verifikasi), agar tidak membebani penyimpanan.
+        """
+        if cv2 is None:
+            return "data:image/jpeg;base64," + base64.b64encode(image_bytes).decode("ascii")
+        try:
+            image = self._decode_image(image_bytes)
+        except FaceServiceError:
+            return "data:image/jpeg;base64," + base64.b64encode(image_bytes).decode("ascii")
+
+        height, width = image.shape[:2]
+        longest = max(height, width)
+        if longest > max_side:
+            scale = max_side / longest
+            image = cv2.resize(image, (int(width * scale), int(height * scale)), interpolation=cv2.INTER_AREA)
+
+        ok, buffer = cv2.imencode(".jpg", image, [int(cv2.IMWRITE_JPEG_QUALITY), quality])
+        if not ok:
+            return "data:image/jpeg;base64," + base64.b64encode(image_bytes).decode("ascii")
+        return "data:image/jpeg;base64," + base64.b64encode(buffer.tobytes()).decode("ascii")
+
     def _quality_score(self, image: np.ndarray) -> int:
         if cv2 is None:
             return 80

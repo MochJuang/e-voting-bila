@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMockState } from '../context/MockStateContext'
 import Modal from '../components/Modal'
@@ -6,13 +6,38 @@ import Modal from '../components/Modal'
 const emptyForm = { nim: '', nama: '', kelas: '', modeAkses: 'mandiri', password: '' }
 
 export default function AdminMahasiswa() {
-  const { dpt, addVoter, bulkAddVoters, updateVoter, deleteVoter } = useMockState()
+  const { dpt, addVoter, bulkAddVoters, updateVoter, deleteVoter, getVoterFacePhoto } = useMockState()
 
   const [formModal, setFormModal] = useState(null) // { isNew, nim, nama, kelas, modeAkses, password }
   const [detailModal, setDetailModal] = useState(null) // voter object
+  const [detailPhoto, setDetailPhoto] = useState(null)
+  const [detailPhotoLoading, setDetailPhotoLoading] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(null) // { nim, nama }
   const [query, setQuery] = useState('')
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!detailModal) {
+      setDetailPhoto(null)
+      return
+    }
+    let cancelled = false
+    setDetailPhotoLoading(true)
+    getVoterFacePhoto(detailModal.nim)
+      .then((data) => {
+        if (!cancelled) setDetailPhoto(data)
+      })
+      .catch(() => {
+        if (!cancelled) setDetailPhoto(null)
+      })
+      .finally(() => {
+        if (!cancelled) setDetailPhotoLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailModal?.nim])
 
   const [bulkOpen, setBulkOpen] = useState(false)
   const [bulkText, setBulkText] = useState('')
@@ -187,13 +212,43 @@ export default function AdminMahasiswa() {
       {detailModal && (
         <Modal title="Detail Mahasiswa" onClose={() => setDetailModal(null)}>
           <div className="flex flex-col items-center mb-4">
-            <div className="w-28 h-28 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center mb-2">
-              {detailModal.fotoWajah ? (
-                <img src={detailModal.fotoWajah} alt={`Foto registrasi ${detailModal.nama}`} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-xs text-slate-400 text-center px-2">Belum ada foto registrasi</span>
-              )}
+            <div className="flex items-start justify-center gap-4 mb-2">
+              <div className="flex flex-col items-center gap-1">
+                <div className="w-24 h-24 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center">
+                  {detailPhotoLoading ? (
+                    <span className="text-xs text-slate-400">Memuat…</span>
+                  ) : detailPhoto?.enrolled_photo ? (
+                    <img src={detailPhoto.enrolled_photo} alt={`Foto registrasi ${detailModal.nama}`} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-[11px] text-slate-400 text-center px-2">Belum ada foto registrasi</span>
+                  )}
+                </div>
+                <span className="text-[11px] text-slate-500">Foto Registrasi</span>
+              </div>
+
+              <div className="flex flex-col items-center gap-1">
+                <div className="w-24 h-24 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center">
+                  {detailPhotoLoading ? (
+                    <span className="text-xs text-slate-400">Memuat…</span>
+                  ) : detailPhoto?.last_verification_photo ? (
+                    <img
+                      src={detailPhoto.last_verification_photo}
+                      alt={`Foto verifikasi terakhir ${detailModal.nama}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-[11px] text-slate-400 text-center px-2">Belum pernah verifikasi</span>
+                  )}
+                </div>
+                <span className="text-[11px] text-slate-500">Saat Memilih</span>
+              </div>
             </div>
+            {detailPhoto?.last_verification_at && (
+              <p className="text-[11px] text-slate-400 mb-2">
+                Verifikasi terakhir: {new Date(detailPhoto.last_verification_at).toLocaleString('id-ID')}
+                {detailPhoto.last_verification_result ? ` — ${detailPhoto.last_verification_result}` : ''}
+              </p>
+            )}
             <span
               className={`text-xs rounded-full px-2 py-0.5 ${
                 detailModal.faceEnrolled ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-500'

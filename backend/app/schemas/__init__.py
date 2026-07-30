@@ -50,6 +50,7 @@ from app.schemas.face import (
     FaceEnrollRequest,
     FaceEnrollResponse,
     FaceLogResponse,
+    FacePhotoResponse,
     FaceVerifyRequest,
     FaceVerifyResponse,
     PoseEnrollResultResponse,

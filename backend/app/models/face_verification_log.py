@@ -1,4 +1,5 @@
 from sqlalchemy import ForeignKey, Float, String, Text
+from sqlalchemy.dialects.mysql import MEDIUMTEXT
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -17,5 +18,8 @@ class FaceVerificationLog(Base, IdMixin, TimestampMixin):
     liveness_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
     device_info: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Cuplikan frame wajah saat verifikasi (tahap liveness), untuk audit terbatas —
+    # menampilkan "wajah saat proses memilih" di panel admin.
+    snapshot_base64: Mapped[str | None] = mapped_column(Text().with_variant(MEDIUMTEXT(), "mysql"), nullable=True)
 
     user: Mapped["User"] = relationship(back_populates="verification_logs")

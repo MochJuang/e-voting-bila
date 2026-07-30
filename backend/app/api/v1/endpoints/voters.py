@@ -3,8 +3,8 @@ from sqlalchemy import desc
 
 from app.api.deps import DbSession, get_current_user
 from app.models import ElectionSession, User, VoterStatus
-from app.schemas import VoterDetailResponse, VoterStatusResponse
-from app.services.mock_helpers import ensure_default_election_data, find_default_voter
+from app.schemas import FacePhotoResponse, VoterDetailResponse, VoterStatusResponse
+from app.services.mock_helpers import build_face_photo_response, ensure_default_election_data, find_default_voter
 
 router = APIRouter()
 
@@ -57,6 +57,11 @@ def get_my_status(db: DbSession, current_user: User = Depends(get_current_user))
         can_vote=can_vote,
         next_step=next_step,
     )
+
+
+@router.get("/me/face-photo", response_model=FacePhotoResponse)
+def get_my_face_photo(db: DbSession, current_user: User = Depends(get_current_user)):
+    return build_face_photo_response(db, current_user)
 
 
 @router.get("/{nim}", response_model=VoterDetailResponse)

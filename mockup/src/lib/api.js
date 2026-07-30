@@ -86,6 +86,7 @@ export const api = {
   voters: {
     me: (token) => request('/voters/me', { token }),
     status: (token) => request('/voters/me/status', { token }),
+    facePhoto: (token) => request('/voters/me/face-photo', { token }),
     byNim: (nim, token) => request(`/voters/${nim}`, { token }),
   },
   face: {
@@ -108,6 +109,7 @@ export const api = {
     bulkCreateVoters: (body, token) => request('/admin/voters/bulk', { method: 'POST', body, token }),
     updateVoter: (nim, body, token) => request(`/admin/voters/${nim}`, { method: 'PATCH', body, token }),
     deleteVoter: (nim, token) => request(`/admin/voters/${nim}`, { method: 'DELETE', token }),
+    voterFacePhoto: (nim, token) => request(`/admin/voters/${nim}/face-photo`, { token }),
     accounts: (token) => request('/admin/accounts', { token }),
     createAccount: (body, token) => request('/admin/accounts', { method: 'POST', body, token }),
     updateAccount: (id, body, token) => request(`/admin/accounts/${id}`, { method: 'PATCH', body, token }),

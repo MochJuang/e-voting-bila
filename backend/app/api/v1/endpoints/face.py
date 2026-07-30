@@ -6,7 +6,7 @@ from app.api.deps import DbSession, get_current_user
 from app.core.config import settings
 from app.core.security import create_access_token
 from app.models import FaceProfile, FaceVerificationLog, User
-from app.models.enums import LivenessChallenge, VerificationResult, VerifyStage
+from app.models.enums import FacePose, LivenessChallenge, VerificationResult, VerifyStage
 from app.schemas import FaceEnrollRequest, FaceEnrollResponse, FaceVerifyRequest, FaceVerifyResponse
 from app.schemas.face import PoseEnrollResultResponse
 from app.services.face_service import FaceServiceError, face_service
@@ -21,6 +21,7 @@ def _log_verification(
     similarity_score: float | None = None,
     liveness_score: float | None = None,
     reason: str | None = None,
+    snapshot_base64: str | None = None,
 ):
     log = FaceVerificationLog(
         user_id=user.id,
@@ -29,8 +30,24 @@ def _log_verification(
         liveness_score=liveness_score,
         reason=reason,
         device_info=None,
+        snapshot_base64=snapshot_base64,
     )
     db.add(log)
+
+
+def _try_snapshot(image_base64: str | None) -> str | None:
+    """Cuplikan frame wajah saat proses verifikasi/memilih, untuk audit terbatas.
+
+    Kegagalan dekode/kompresi tidak boleh menggagalkan alur verifikasi — kembalikan
+    None saja bila terjadi masalah.
+    """
+    if not image_base64:
+        return None
+    try:
+        image_bytes = face_service.decode_base64(image_base64)
+        return face_service.to_display_photo(image_bytes)
+    except FaceServiceError:
+        return None
 
 
 def _invalid_count(db: DbSession, user: User) -> int:
@@ -57,17 +74,24 @@ def enroll_face(payload: FaceEnrollRequest, db: DbSession, current_user: User = 
 
     version = "insightface-multipose-v1" if not used_fallback else "fallback-multipose-v1"
 
+    # Foto referensi yang ditampilkan kembali: pakai pose tengah (paling representatif),
+    # fallback ke frame pertama bila pose tengah tidak dikirim.
+    reference_bytes = next((b for pose, b in frames if pose == FacePose.CENTER), frames[0][1])
+    photo_base64 = face_service.to_display_photo(reference_bytes)
+
     profile = db.query(FaceProfile).filter(FaceProfile.user_id == current_user.id).first()
     if profile:
         profile.embedding = blob
         profile.embedding_version = version
         profile.quality_score = quality
+        profile.photo_base64 = photo_base64
     else:
         profile = FaceProfile(
             user_id=current_user.id,
             embedding=blob,
             embedding_version=version,
             quality_score=quality,
+            photo_base64=photo_base64,
         )
         db.add(profile)
 
@@ -91,9 +115,21 @@ def enroll_face(payload: FaceEnrollRequest, db: DbSession, current_user: User = 
     )
 
 
-def _locked_response(db: DbSession, user: User, stage: VerifyStage, invalid_count: int) -> FaceVerifyResponse:
+def _locked_response(
+    db: DbSession,
+    user: User,
+    stage: VerifyStage,
+    invalid_count: int,
+    image_base64: str | None = None,
+) -> FaceVerifyResponse:
     user.is_locked = True
-    _log_verification(db, user, VerificationResult.LOCKED, reason="Percobaan melebihi batas")
+    _log_verification(
+        db,
+        user,
+        VerificationResult.LOCKED,
+        reason="Percobaan melebihi batas",
+        snapshot_base64=_try_snapshot(image_base64),
+    )
     db.commit()
     return FaceVerifyResponse(
         stage=stage,
@@ -113,7 +149,7 @@ def verify_face(payload: FaceVerifyRequest, db: DbSession, current_user: User = 
 
     invalid_count = _invalid_count(db, current_user)
     if current_user.is_locked or invalid_count >= settings.face_max_retries:
-        return _locked_response(db, current_user, payload.stage, invalid_count)
+        return _locked_response(db, current_user, payload.stage, invalid_count, payload.image_base64)
 
     if not current_user.face_enrolled:
         return FaceVerifyResponse(
@@ -179,10 +215,11 @@ def verify_face(payload: FaceVerifyRequest, db: DbSession, current_user: User = 
             current_user,
             VerificationResult.INVALID,
             reason="Liveness timeout",
+            snapshot_base64=_try_snapshot(payload.image_base64),
         )
         new_invalid = invalid_count + 1
         if new_invalid >= settings.face_max_retries:
-            return _locked_response(db, current_user, VerifyStage.LIVENESS, new_invalid)
+            return _locked_response(db, current_user, VerifyStage.LIVENESS, new_invalid, payload.image_base64)
         db.commit()
         return FaceVerifyResponse(
             stage=VerifyStage.LIVENESS,
@@ -234,6 +271,7 @@ def verify_face(payload: FaceVerifyRequest, db: DbSession, current_user: User = 
         similarity_score=similarity,
         liveness_score=analysis.liveness_score,
         reason=f"Verifikasi berhasil (liveness: {payload.challenge.value})",
+        snapshot_base64=face_service.to_display_photo(image_bytes),
     )
     db.commit()
 

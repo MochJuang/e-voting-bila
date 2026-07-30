@@ -27,6 +27,7 @@ from app.schemas import (
     BulkVoterResponse,
     BulkVoterResultItem,
     CandidateForm,
+    FacePhotoResponse,
     KioskDeviceForm,
     MessageResponse,
     PositionForm,
@@ -37,6 +38,7 @@ from app.schemas import (
     VoterForm,
 )
 from app.services.mock_helpers import (
+    build_face_photo_response,
     ensure_default_election_data,
     ensure_default_admins,
     ensure_default_voters,
@@ -177,6 +179,14 @@ def list_voters(db: DbSession, admin: AdminAccount = Depends(get_current_admin))
     ensure_default_voters(db)
     voters = db.query(User).order_by(User.nim.asc()).all()
     return [_voter_to_response(voter) for voter in voters]
+
+
+@router.get("/voters/{nim}/face-photo", response_model=FacePhotoResponse)
+def get_voter_face_photo(nim: str, db: DbSession, admin: AdminAccount = Depends(get_current_admin)):
+    voter = db.query(User).filter(User.nim == nim).first()
+    if not voter:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mahasiswa tidak ditemukan")
+    return build_face_photo_response(db, voter)
 
 
 @router.post("/voters", response_model=VoterDetailResponse)

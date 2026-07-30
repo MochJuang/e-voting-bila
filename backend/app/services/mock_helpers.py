@@ -3,9 +3,10 @@ from __future__ import annotations
 from collections import defaultdict
 
 from app.core.security import hash_password
-from app.models import AdminAccount, Candidate, ElectionSession, Position, User, Vote
+from app.models import AdminAccount, Candidate, ElectionSession, FaceProfile, FaceVerificationLog, Position, User, Vote
 from app.schemas.admin import AdminDashboardResponse, AdminDashboardStats, PositionResult, RecapResponse, ResultSummary
 from app.schemas.election import CandidateResponse, ElectionSessionResponse, PositionResponse
+from app.schemas.face import FacePhotoResponse
 from app.services.mock_data import DEFAULT_ADMINS, DEFAULT_POSITIONS, DEFAULT_SESSION, DEFAULT_VOTERS
 
 
@@ -194,3 +195,22 @@ def ensure_default_admins(db):
 
     if created:
         db.commit()
+
+
+def build_face_photo_response(db, user: User) -> FacePhotoResponse:
+    """Foto wajah hasil registrasi + cuplikan verifikasi terakhir (saat memilih)."""
+    profile = db.query(FaceProfile).filter(FaceProfile.user_id == user.id).first()
+    last_log = (
+        db.query(FaceVerificationLog)
+        .filter(FaceVerificationLog.user_id == user.id, FaceVerificationLog.snapshot_base64.isnot(None))
+        .order_by(FaceVerificationLog.created_at.desc())
+        .first()
+    )
+    return FacePhotoResponse(
+        nim=user.nim,
+        enrolled_photo=profile.photo_base64 if profile else None,
+        enrolled_at=profile.updated_at if profile else None,
+        last_verification_photo=last_log.snapshot_base64 if last_log else None,
+        last_verification_at=last_log.created_at if last_log else None,
+        last_verification_result=last_log.result if last_log else None,
+    )

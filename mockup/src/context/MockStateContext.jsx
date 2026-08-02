@@ -33,6 +33,7 @@ function normalizePosition(position) {
       nomor: candidate.number ?? candidate.nomor,
       warna: candidate.color ?? candidate.warna ?? '#2563eb',
       visi: candidate.vision ?? candidate.visi ?? '',
+      foto: candidate.photo_base64 ?? candidate.foto ?? null,
     })),
   }
 }
@@ -394,6 +395,7 @@ export function MockStateProvider({ children }) {
         number: Number(kandidat.nomor ?? kandidat.number),
         vision: kandidat.visi ?? kandidat.vision ?? '',
         photo_path: kandidat.photo_path ?? null,
+        photo_base64: kandidat.foto ?? kandidat.photo_base64 ?? null,
         color: kandidat.warna ?? kandidat.color ?? '#2563eb',
       },
       adminToken,
@@ -411,6 +413,7 @@ export function MockStateProvider({ children }) {
         number: Number(patch.nomor ?? patch.number),
         vision: patch.visi ?? patch.vision ?? '',
         photo_path: patch.photo_path ?? null,
+        photo_base64: patch.foto ?? patch.photo_base64 ?? null,
         color: patch.warna ?? patch.color ?? '#2563eb',
       },
       adminToken,

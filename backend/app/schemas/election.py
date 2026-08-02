@@ -12,6 +12,7 @@ class CandidateResponse(ORMModel):
     number: int
     vision: str | None = None
     photo_path: str | None = None
+    photo_base64: str | None = None
     color: str | None = None
 
 

@@ -9,7 +9,7 @@ from app.models import FaceProfile, FaceVerificationLog, User
 from app.models.enums import FacePose, LivenessChallenge, VerificationResult, VerifyStage
 from app.schemas import FaceEnrollRequest, FaceEnrollResponse, FaceVerifyRequest, FaceVerifyResponse
 from app.schemas.face import PoseEnrollResultResponse
-from app.services.face_service import FaceServiceError, face_service
+from app.services.face_service import FaceService, FaceServiceError, face_service
 
 router = APIRouter()
 
@@ -50,6 +50,29 @@ def _try_snapshot(image_base64: str | None) -> str | None:
         return None
 
 
+def _reject_if_face_registered_elsewhere(db: DbSession, new_blob: bytes, exclude_user_id: int) -> None:
+    """Tolak registrasi bila wajah ini sudah terdaftar pada akun mahasiswa lain.
+
+    Mencegah satu wajah dipakai untuk mendaftarkan banyak NIM (mis. berbagi wajah
+    dengan orang lain agar bisa memilih ganda). NIM pemilik lain sengaja tidak
+    diungkap ke pemanggil untuk menjaga privasi — cukup ditolak.
+    """
+    candidate_matrix = FaceService.unpack_embeddings(new_blob)
+    other_profiles = db.query(FaceProfile).filter(FaceProfile.user_id != exclude_user_id).all()
+    for other_profile in other_profiles:
+        for row in candidate_matrix:
+            similarity = face_service.best_similarity(other_profile.embedding, row.tobytes())
+            if similarity >= settings.face_match_threshold:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        "Wajah ini terindikasi sudah terdaftar pada akun mahasiswa lain. "
+                        "Registrasi ditolak untuk mencegah satu wajah dipakai di banyak akun. "
+                        "Hubungi panitia jika Anda yakin ini adalah kesalahan."
+                    ),
+                )
+
+
 def _invalid_count(db: DbSession, user: User) -> int:
     return (
         db.query(FaceVerificationLog)
@@ -71,6 +94,8 @@ def enroll_face(payload: FaceEnrollRequest, db: DbSession, current_user: User = 
         blob, pose_results, quality, used_fallback = face_service.enroll_poses(frames)
     except FaceServiceError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    _reject_if_face_registered_elsewhere(db, blob, exclude_user_id=current_user.id)
 
     version = "insightface-multipose-v1" if not used_fallback else "fallback-multipose-v1"
 

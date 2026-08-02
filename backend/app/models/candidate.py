@@ -1,4 +1,5 @@
 from sqlalchemy import ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy.dialects.mysql import MEDIUMTEXT
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -16,6 +17,8 @@ class Candidate(Base, IdMixin, TimestampMixin):
     number: Mapped[int] = mapped_column(nullable=False)
     vision: Mapped[str | None] = mapped_column(Text, nullable=True)
     photo_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Foto kandidat sebagai data URL base64 (dikompres), ditampilkan di panel admin & surat suara.
+    photo_base64: Mapped[str | None] = mapped_column(Text().with_variant(MEDIUMTEXT(), "mysql"), nullable=True)
     color: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     position: Mapped["Position"] = relationship(back_populates="candidates")

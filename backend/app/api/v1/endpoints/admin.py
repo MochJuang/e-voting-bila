@@ -37,6 +37,7 @@ from app.schemas import (
     VoterDetailResponse,
     VoterForm,
 )
+from app.services.face_service import FaceServiceError, face_service
 from app.services.mock_helpers import (
     build_face_photo_response,
     ensure_default_election_data,
@@ -68,11 +69,23 @@ def _position_to_response(position: Position) -> PositionResponse:
                 "number": candidate.number,
                 "vision": candidate.vision,
                 "photo_path": candidate.photo_path,
+                "photo_base64": candidate.photo_base64,
                 "color": candidate.color,
             }
             for candidate in position.candidates
         ],
     )
+
+
+def _compress_candidate_photo(photo_base64: str | None) -> str | None:
+    """Kompres foto kandidat yang diunggah admin agar hemat penyimpanan."""
+    if not photo_base64:
+        return None
+    try:
+        image_bytes = face_service.decode_base64(photo_base64)
+        return face_service.to_display_photo(image_bytes, max_side=460)
+    except FaceServiceError:
+        return photo_base64
 
 
 def _voter_to_response(voter: User) -> VoterDetailResponse:
@@ -87,6 +100,7 @@ def _candidate_to_dict(candidate: Candidate) -> dict:
         "number": candidate.number,
         "vision": candidate.vision,
         "photo_path": candidate.photo_path,
+        "photo_base64": candidate.photo_base64,
         "color": candidate.color,
     }
 
@@ -410,6 +424,7 @@ def create_candidate(position_id: int, payload: CandidateForm, db: DbSession, ad
         number=payload.number,
         vision=payload.vision,
         photo_path=payload.photo_path,
+        photo_base64=_compress_candidate_photo(payload.photo_base64),
         color=payload.color,
     )
     db.add(candidate)
@@ -460,6 +475,8 @@ def update_candidate(
     candidate.number = payload.number
     candidate.vision = payload.vision
     candidate.photo_path = payload.photo_path
+    if payload.photo_base64:
+        candidate.photo_base64 = _compress_candidate_photo(payload.photo_base64)
     candidate.color = payload.color
     try:
         db.commit()

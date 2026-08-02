@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from _util import API
+from _util import API, make_face_b64
 from conftest import register_student
 
 
@@ -137,6 +137,43 @@ def test_hapus_mahasiswa_tanpa_token_admin_ditolak(client):
     register_student(client, "2141721066")
     response = client.delete(f"{API}/admin/voters/2141721066")
     assert response.status_code == 401
+
+
+def test_tambah_kandidat_dengan_foto(client, admin_auth, election):
+    photo = make_face_b64(seed=3)
+    response = client.post(
+        f"{API}/admin/positions/{election['position_id']}/candidates",
+        json={"name": "Kandidat Foto", "number": 99, "vision": "Visi uji", "photo_base64": photo},
+        headers=admin_auth,
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["photo_base64"], "foto kandidat harus tersimpan"
+    assert body["photo_base64"].startswith("data:image/jpeg;base64,")
+
+    # Foto tampil juga di endpoint publik daftar kandidat (surat suara).
+    active = client.get(f"{API}/election/active")
+    positions = active.json()["positions"]
+    candidates = [c for p in positions for c in p["candidates"]]
+    assert any(c["name"] == "Kandidat Foto" and c["photo_base64"] for c in candidates)
+
+
+def test_update_kandidat_tanpa_foto_baru_tidak_menghapus_foto_lama(client, admin_auth, election):
+    photo = make_face_b64(seed=4)
+    created = client.post(
+        f"{API}/admin/positions/{election['position_id']}/candidates",
+        json={"name": "Kandidat Lama", "number": 98, "photo_base64": photo},
+        headers=admin_auth,
+    )
+    candidate_id = created.json()["id"]
+
+    updated = client.patch(
+        f"{API}/admin/positions/{election['position_id']}/candidates/{candidate_id}",
+        json={"name": "Kandidat Lama Diedit", "number": 98},
+        headers=admin_auth,
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["photo_base64"], "foto lama tidak boleh hilang saat foto baru tidak dikirim"
 
 
 def test_edit_kelas_dan_mode_akses_mahasiswa(client, admin_auth):

@@ -22,6 +22,7 @@ def _position_to_response(position: Position):
                 "number": candidate.number,
                 "vision": candidate.vision,
                 "photo_path": candidate.photo_path,
+                "photo_base64": candidate.photo_base64,
                 "color": candidate.color,
             }
             for candidate in position.candidates

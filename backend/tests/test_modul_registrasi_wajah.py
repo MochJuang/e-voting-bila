@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from _util import API, make_face_b64
+from conftest import register_student
 
 
 def _five_frames(seed: int = 1):
@@ -48,3 +49,32 @@ def test_registrasi_dengan_citra_rusak_ditolak(client, student):
         headers=student["auth"],
     )
     assert response.status_code == 400
+
+
+def test_wajah_yang_sama_ditolak_saat_didaftarkan_akun_lain(client, enrolled_student):
+    """Satu wajah tidak boleh terdaftar pada lebih dari satu NIM."""
+    kedua = register_student(client, "2141721077")
+    token_kedua = kedua.json()["access_token"]
+
+    response = client.post(
+        f"{API}/face/enroll",
+        # seed=1 sama persis dengan wajah milik enrolled_student
+        json={"nim": "2141721077", "frames": _five_frames(seed=1)},
+        headers={"Authorization": f"Bearer {token_kedua}"},
+    )
+    assert response.status_code == 400
+    assert "akun mahasiswa lain" in response.json()["detail"]
+
+
+def test_wajah_berbeda_tetap_bisa_didaftarkan_akun_lain(client, enrolled_student):
+    """Memastikan validasi anti-duplikasi tidak salah menolak wajah yang benar-benar berbeda."""
+    kedua = register_student(client, "2141721078")
+    token_kedua = kedua.json()["access_token"]
+
+    response = client.post(
+        f"{API}/face/enroll",
+        json={"nim": "2141721078", "frames": _five_frames(seed=99)},
+        headers={"Authorization": f"Bearer {token_kedua}"},
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["face_enrolled"] is True

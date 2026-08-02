@@ -283,10 +283,11 @@ Tabel `candidates`
 | 3 | name | Varchar(150) | | Nama kandidat |
 | 4 | number | Integer | | Nomor urut kandidat |
 | 5 | vision | Text | | Visi/misi kandidat |
-| 6 | photo_path | Varchar(255) | | Path foto kandidat |
-| 7 | color | Varchar(20) | | Warna identitas kandidat |
-| 8 | created_at | DateTime | | Waktu data dibuat |
-| 9 | updated_at | DateTime | | Waktu data diperbarui |
+| 6 | photo_path | Varchar(255) | | Path foto kandidat (opsional, penyimpanan berbasis file) |
+| 7 | photo_base64 | Blob | | Foto kandidat tersimpan sebagai data URL base64 |
+| 8 | color | Varchar(20) | | Warna identitas kandidat |
+| 9 | created_at | DateTime | | Waktu data dibuat |
+| 10 | updated_at | DateTime | | Waktu data diperbarui |
 
 Tabel `votes`
 

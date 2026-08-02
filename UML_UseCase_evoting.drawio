@@ -1,0 +1,58 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="usecase_evoting" name="Use Case Diagram E-Voting">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1650" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="sys" value="Sistem E-Voting Ketua HMTI" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=center;fontStyle=1;fontSize=14;fillColor=none;strokeColor=#333333;spacingTop=8;" vertex="1" parent="1"><mxGeometry x="260" y="40" width="900" height="1080" as="geometry"/></mxCell>
+        <mxCell id="actor_mhs" value="Mahasiswa
+(Pemilih)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="60" y="460" width="50" height="80" as="geometry"/></mxCell>
+        <mxCell id="actor_admin" value="Panitia
+(Admin)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="1480" y="460" width="50" height="80" as="geometry"/></mxCell>
+        <mxCell id="uc_login" value="Login
+(NIM &amp; Password)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11.5;" vertex="1" parent="1"><mxGeometry x="300" y="80" width="210" height="56" as="geometry"/></mxCell>
+        <mxCell id="a1" style="endArrow=none;html=1;strokeColor=#333333;" edge="1" parent="1" source="actor_mhs" target="uc_login"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="uc_enroll" value="Registrasi Wajah
+(5 Pose)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11.5;" vertex="1" parent="1"><mxGeometry x="300" y="190" width="210" height="56" as="geometry"/></mxCell>
+        <mxCell id="a2" style="endArrow=none;html=1;strokeColor=#333333;" edge="1" parent="1" source="actor_mhs" target="uc_enroll"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="uc_verify" value="Verifikasi Wajah
+&amp; Liveness (Realtime)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11.5;" vertex="1" parent="1"><mxGeometry x="300" y="300" width="210" height="56" as="geometry"/></mxCell>
+        <mxCell id="a3" style="endArrow=none;html=1;strokeColor=#333333;" edge="1" parent="1" source="actor_mhs" target="uc_verify"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="uc_vote" value="Pilih Kandidat
+(Booth Voting)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11.5;" vertex="1" parent="1"><mxGeometry x="300" y="410" width="210" height="56" as="geometry"/></mxCell>
+        <mxCell id="a4" style="endArrow=none;html=1;strokeColor=#333333;" edge="1" parent="1" source="actor_mhs" target="uc_vote"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="uc_changepw" value="Ganti Password
+(Mandiri)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11.5;" vertex="1" parent="1"><mxGeometry x="300" y="520" width="210" height="56" as="geometry"/></mxCell>
+        <mxCell id="a5" style="endArrow=none;html=1;strokeColor=#333333;" edge="1" parent="1" source="actor_mhs" target="uc_changepw"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="uc_status" value="Lihat Status
+Memilih &amp; Hasil" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11.5;" vertex="1" parent="1"><mxGeometry x="300" y="630" width="210" height="56" as="geometry"/></mxCell>
+        <mxCell id="a6" style="endArrow=none;html=1;strokeColor=#333333;" edge="1" parent="1" source="actor_mhs" target="uc_status"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="uc_admin_login" value="Login Admin" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11.5;" vertex="1" parent="1"><mxGeometry x="780" y="80" width="210" height="56" as="geometry"/></mxCell>
+        <mxCell id="a7" style="endArrow=none;html=1;strokeColor=#333333;" edge="1" parent="1" source="actor_admin" target="uc_admin_login"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="uc_manage_voters" value="Kelola Mahasiswa (DPT)
++ Impor Massal + Reset Password" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11.5;" vertex="1" parent="1"><mxGeometry x="780" y="190" width="210" height="56" as="geometry"/></mxCell>
+        <mxCell id="a8" style="endArrow=none;html=1;strokeColor=#333333;" edge="1" parent="1" source="actor_admin" target="uc_manage_voters"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="uc_manage_candidates" value="Kelola Kandidat
+&amp; Jabatan (+ Foto)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11.5;" vertex="1" parent="1"><mxGeometry x="780" y="300" width="210" height="56" as="geometry"/></mxCell>
+        <mxCell id="a9" style="endArrow=none;html=1;strokeColor=#333333;" edge="1" parent="1" source="actor_admin" target="uc_manage_candidates"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="uc_manage_kiosk" value="Kelola Perangkat
+Kiosk" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11.5;" vertex="1" parent="1"><mxGeometry x="780" y="410" width="210" height="56" as="geometry"/></mxCell>
+        <mxCell id="a10" style="endArrow=none;html=1;strokeColor=#333333;" edge="1" parent="1" source="actor_admin" target="uc_manage_kiosk"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="uc_kiosk_session" value="Jalankan Sesi
+Admin-Assisted (Kiosk)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11.5;" vertex="1" parent="1"><mxGeometry x="780" y="520" width="210" height="56" as="geometry"/></mxCell>
+        <mxCell id="a11" style="endArrow=none;html=1;strokeColor=#333333;" edge="1" parent="1" source="actor_admin" target="uc_kiosk_session"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="uc_manage_admin" value="Kelola Akun
+Admin/Panitia" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11.5;" vertex="1" parent="1"><mxGeometry x="780" y="630" width="210" height="56" as="geometry"/></mxCell>
+        <mxCell id="a12" style="endArrow=none;html=1;strokeColor=#333333;" edge="1" parent="1" source="actor_admin" target="uc_manage_admin"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="uc_session" value="Buka/Tutup
+Sesi Pemilihan" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11.5;" vertex="1" parent="1"><mxGeometry x="780" y="740" width="210" height="56" as="geometry"/></mxCell>
+        <mxCell id="a13" style="endArrow=none;html=1;strokeColor=#333333;" edge="1" parent="1" source="actor_admin" target="uc_session"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="uc_recap" value="Rekapitulasi Hasil
+(Export PDF/Excel)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11.5;" vertex="1" parent="1"><mxGeometry x="780" y="850" width="210" height="56" as="geometry"/></mxCell>
+        <mxCell id="a14" style="endArrow=none;html=1;strokeColor=#333333;" edge="1" parent="1" source="actor_admin" target="uc_recap"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="i15" value="&lt;&lt;include&gt;&gt;" style="endArrow=block;dashed=1;html=1;fontStyle=2;fontSize=10;strokeColor=#666666;" edge="1" parent="1" source="uc_kiosk_session" target="uc_verify"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="i16" value="&lt;&lt;include&gt;&gt;" style="endArrow=block;dashed=1;html=1;fontStyle=2;fontSize=10;strokeColor=#666666;" edge="1" parent="1" source="uc_kiosk_session" target="uc_vote"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

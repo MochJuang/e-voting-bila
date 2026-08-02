@@ -158,7 +158,8 @@ flowchart TD
     A["Panitia"] --> B["Kelola Data Pemilih"]
     A --> C["Kelola Data Kandidat"]
     D["Pemilih"] --> E["Autentikasi"]
-    E --> F["Voting"]
+    E --> I["Mahasiswa"]
+    I --> F["Voting"]
     F --> G["Penyimpanan Suara"]
     G --> H["Rekapitulasi Hasil"]
     H --> A

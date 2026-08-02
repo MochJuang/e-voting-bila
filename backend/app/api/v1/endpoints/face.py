@@ -104,9 +104,14 @@ def enroll_face(payload: FaceEnrollRequest, db: DbSession, current_user: User = 
     reference_bytes = next((b for pose, b in frames if pose == FacePose.CENTER), frames[0][1])
     photo_base64 = face_service.to_display_photo(reference_bytes)
 
+    # Cermin blob dalam bentuk array angka biasa (bukan biner) — sama persis isinya,
+    # cuma agar bisa diinspeksi/dibaca langsung; pencocokan tetap memakai `embedding` (blob).
+    embedding_vector = FaceService.unpack_embeddings(blob).tolist()
+
     profile = db.query(FaceProfile).filter(FaceProfile.user_id == current_user.id).first()
     if profile:
         profile.embedding = blob
+        profile.embedding_vector = embedding_vector
         profile.embedding_version = version
         profile.quality_score = quality
         profile.photo_base64 = photo_base64
@@ -114,6 +119,7 @@ def enroll_face(payload: FaceEnrollRequest, db: DbSession, current_user: User = 
         profile = FaceProfile(
             user_id=current_user.id,
             embedding=blob,
+            embedding_vector=embedding_vector,
             embedding_version=version,
             quality_score=quality,
             photo_base64=photo_base64,

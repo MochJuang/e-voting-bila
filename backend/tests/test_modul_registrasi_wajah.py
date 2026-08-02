@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import numpy as np
+
 from _util import API, make_face_b64
 from conftest import register_student
+
+from app.models import FaceProfile
+from app.services.face_service import FaceService
 
 
 def _five_frames(seed: int = 1):
@@ -22,6 +27,28 @@ def test_registrasi_wajah_lima_pose_berhasil(client, student):
     assert body["face_enrolled"] is True
     assert len(body["poses"]) == 5
     assert all(p["accepted"] for p in body["poses"])
+
+
+def test_embedding_vector_tersimpan_sebagai_array_bukan_blob(client, db, student):
+    response = client.post(
+        f"{API}/face/enroll",
+        json={"nim": student["nim"], "frames": _five_frames()},
+        headers=student["auth"],
+    )
+    assert response.status_code == 200
+
+    profile = db.query(FaceProfile).first()
+    assert isinstance(profile.embedding_vector, list)
+    assert len(profile.embedding_vector) == 5  # 5 pose
+    assert all(isinstance(v, float) for v in profile.embedding_vector[0])
+
+    # Isinya harus identik (secara numerik) dengan hasil unpack blob `embedding` (sumber
+    # kebenaran pencocokan). Dibandingkan dengan toleransi, bukan `==` ketat — nilai float
+    # yang lolos round-trip JSON (mis. via MySQL) bisa beda representasi float64 vs float32
+    # walau nilainya sama persis pada presisi aslinya.
+    expected = FaceService.unpack_embeddings(profile.embedding)
+    actual = np.array(profile.embedding_vector, dtype=np.float32)
+    assert np.allclose(actual, expected, atol=1e-5)
 
 
 def test_status_face_enrolled_terupdate_setelah_registrasi(client, enrolled_student):
